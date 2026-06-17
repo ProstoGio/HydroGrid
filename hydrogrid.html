@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HydroGrid — Seasonal H₂ Energy Storage Simulation</title>
+<style>
+  /* ── Reset & Base ──────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:        #0f172a;
+    --bg2:       #1e293b;
+    --bg3:       #334155;
+    --border:    rgba(148,163,184,0.15);
+    --border2:   rgba(148,163,184,0.28);
+    --text:      #e2e8f0;
+    --text2:     #94a3b8;
+    --cyan:      #22d3ee;
+    --cyan2:     #0e7490;
+    --blue:      #3b82f6;
+    --green:     #4ade80;
+    --green2:    #166534;
+    --yellow:    #facc15;
+    --orange:    #fb923c;
+    --red:       #f87171;
+    --red2:      #991b1b;
+    --purple:    #a78bfa;
+    --label-bg:  rgba(15,23,42,0.82);
+    --font:      system-ui, 'Segoe UI', sans-serif;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+    overflow-x: hidden;
+    user-select: none;
+  }
+
+  /* ── Header ───────────────────────────────────────── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 28px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 1.25rem; font-weight: 700; letter-spacing: -0.3px;
+  }
+  .logo-icon {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--cyan2), var(--blue));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+  }
+  .logo span { color: var(--cyan); }
+  .subtitle { font-size: 0.7rem; color: var(--text2); font-weight: 400; letter-spacing: 0.5px; margin-top: 2px; }
+  .status-badge {
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.8px;
+    padding: 4px 12px; border-radius: 20px; text-transform: uppercase;
+    transition: all 0.5s;
+  }
+  .status-badge.summer { background: rgba(250,204,21,0.15); color: var(--yellow); border: 1px solid rgba(250,204,21,0.3); }
+  .status-badge.winter { background: rgba(59,130,246,0.15); color: var(--blue);   border: 1px solid rgba(59,130,246,0.3); }
+
+  /* ── Main layout ──────────────────────────────────── */
+  .main-wrap {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    height: calc(100vh - 57px);
+    min-height: 620px;
+  }
+  .canvas-wrap { position: relative; overflow: hidden; }
+  canvas#main { display: block; width: 100%; height: 100%; }
+
+  /* ── Dashboard overlay ────────────────────────────── */
+  .dashboard {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 16px 28px;
+    display: grid;
+    grid-template-columns: auto 1fr 1fr 2fr;
+    align-items: center;
+    gap: 24px;
+  }
+
+  /* Toggle */
+  .toggle-wrap { display: flex; flex-direction: column; gap: 8px; }
+  .toggle-label { font-size: 0.68rem; color: var(--text2); letter-spacing: 0.6px; text-transform: uppercase; font-weight: 600; }
+  .toggle-row { display: flex; align-items: center; gap: 10px; }
+  .toggle-text { font-size: 0.82rem; font-weight: 600; min-width: 68px; transition: color 0.4s; }
+  .toggle-text.summer { color: var(--yellow); }
+  .toggle-text.winter { color: var(--blue); }
+  .switch {
+    position: relative; width: 52px; height: 28px; cursor: pointer;
+    flex-shrink: 0;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider-track {
+    position: absolute; inset: 0;
+    background: rgba(250,204,21,0.25);
+    border: 1px solid rgba(250,204,21,0.5);
+    border-radius: 14px;
+    transition: all 0.4s;
+  }
+  .switch input:checked ~ .slider-track {
+    background: rgba(59,130,246,0.25);
+    border-color: rgba(59,130,246,0.5);
+  }
+  .slider-thumb {
+    position: absolute; top: 3px; left: 3px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--yellow);
+    transition: all 0.4s; box-shadow: 0 0 8px rgba(250,204,21,0.5);
+  }
+  .switch input:checked ~ .slider-track .slider-thumb {
+    transform: translateX(24px);
+    background: var(--blue);
+    box-shadow: 0 0 8px rgba(59,130,246,0.5);
+  }
+
+  /* Gauges */
+  .gauge-wrap { display: flex; flex-direction: column; gap: 6px; }
+  .gauge-title { font-size: 0.68rem; color: var(--text2); letter-spacing: 0.5px; text-transform: uppercase; font-weight: 600; }
+  .gauge-bar-wrap {
+    height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .gauge-bar { height: 100%; border-radius: 4px; transition: width 0.5s, background 0.5s; }
+  .gauge-val {
+    font-size: 1.1rem; font-weight: 700; transition: color 0.4s;
+    display: flex; align-items: baseline; gap: 4px;
+  }
+  .gauge-val span { font-size: 0.7rem; font-weight: 400; color: var(--text2); }
+  .water-bar  { background: linear-gradient(90deg, var(--cyan2), var(--cyan)); }
+  .h2-bar     { background: linear-gradient(90deg, var(--green2), var(--green)); }
+  .water-val  { color: var(--cyan); }
+  .h2-val     { color: var(--green); }
+
+  /* State description */
+  .state-box {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .state-title { font-size: 0.65rem; color: var(--text2); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; }
+  .state-desc { font-size: 0.82rem; color: var(--text); line-height: 1.45; }
+  .state-desc em { font-style: normal; font-weight: 600; }
+
+  /* ── Responsive ───────────────────────────────────── */
+  @media (max-width: 720px) {
+    .dashboard { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; }
+    .state-box { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div>
+      <div>Hydro<span>Grid</span></div>
+      <div class="subtitle">Closed-Loop Alpine H₂ Energy Storage System</div>
+    </div>
+  </div>
+  <div class="status-badge summer" id="statusBadge">Summer Mode Active</div>
+</header>
+
+<div class="main-wrap">
+  <div class="canvas-wrap">
+    <canvas id="main"></canvas>
+  </div>
+
+  <div class="dashboard">
+    <!-- Toggle -->
+    <div class="toggle-wrap">
+      <div class="toggle-label">System Mode</div>
+      <div class="toggle-row">
+        <span class="toggle-text summer" id="summerLabel">SUMMER</span>
+        <label class="switch">
+          <input type="checkbox" id="modeToggle">
+          <div class="slider-track"><div class="slider-thumb"></div></div>
+        </label>
+        <span class="toggle-text winter" id="winterLabel">WINTER</span>
+      </div>
+    </div>
+
+    <!-- Water gauge -->
+    <div class="gauge-wrap">
+      <div class="gauge-title">💧 Water Reservoir Level</div>
+      <div class="gauge-bar-wrap"><div class="gauge-bar water-bar" id="waterBar" style="width:80%"></div></div>
+      <div class="gauge-val water-val" id="waterVal">80<span>%</span></div>
+    </div>
+
+    <!-- H2 gauge -->
+    <div class="gauge-wrap">
+      <div class="gauge-title">⬡ Solid-State H₂ Storage</div>
+      <div class="gauge-bar-wrap"><div class="gauge-bar h2-bar" id="h2Bar" style="width:20%"></div></div>
+      <div class="gauge-val h2-val" id="h2Val">20<span>%</span></div>
+    </div>
+
+    <!-- State description -->
+    <div class="state-box">
+      <div class="state-title">System State</div>
+      <div class="state-desc" id="stateDesc">
+        <em>☀️ Solar electrolysis active.</em> PV array is splitting H₂O molecules — oxygen vents to atmosphere while green hydrogen absorbs into the metal-hydride alloy storage stack for winter.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//  HydroGrid — Canvas Simulation Engine
+// ═══════════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('main');
+const ctx = canvas.getContext('2d');
+let W, H;                  // canvas dimensions
+let isSummer = true;       // mode flag
+let waterLevel = 0.80;     // 0..1
+let h2Level    = 0.20;     // 0..1
+let t = 0;                 // global time
+let particles = [];        // active particle pool
+let pulses = [];           // wire-pulse pool
+
+// ── Layout constants (recalculated in resize) ──────────────────────
+let L = {};  // layout object
+
+function calcLayout() {
+  W = canvas.clientWidth;
+  H = canvas.clientHeight;
+  canvas.width  = W * devicePixelRatio;
+  canvas.height = H * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+
+  // component bounding boxes, expressed as fractions → pixels
+  const pad = 18;
+  L = {
+    // Solar PV (top-left)
+    solar: {
+      x: W * 0.04, y: H * 0.06,
+      w: W * 0.17, h: H * 0.20
+    },
+    // Water Reservoir (bottom-left)
+    water: {
+      x: W * 0.04, y: H * 0.58,
+      w: W * 0.17, h: H * 0.32
+    },
+    // PEM Electrolyzer (center-top)
+    electro: {
+      x: W * 0.34, y: H * 0.06,
+      w: W * 0.16, h: H * 0.28
+    },
+    // PEM Fuel Cell (center-bottom)
+    fuelcell: {
+      x: W * 0.34, y: H * 0.54,
+      w: W * 0.16, h: H * 0.28
+    },
+    // Metal-Hydride Storage (right)
+    h2store: {
+      x: W * 0.65, y: H * 0.12,
+      w: W * 0.18, h: H * 0.55
+    },
+    // Alpine Cabin (top-right)
+    cabin: {
+      x: W * 0.80, y: H * 0.06,
+      w: W * 0.16, h: H * 0.40
+    },
+  };
+  // Derived center points
+  for (const k in L) {
+    L[k].cx = L[k].x + L[k].w / 2;
+    L[k].cy = L[k].y + L[k].h / 2;
+  }
+}
+
+// ── Particle system ─────────────────────────────────────────────────
+function spawnParticle(config) {
+  particles.push({
+    x: config.x, y: config.y,
+    tx: config.tx, ty: config.ty,
+    color: config.color,
+    label: config.label || '',
+    r: config.r || 4,
+    speed: config.speed || 1,
+    progress: 0,
+    path: config.path || null,   // array of {x,y} waypoints
+    life: 1,
+    type: config.type || 'dot',
+    wobble: config.wobble || 0,
+    pid: Math.random()
+  });
+}
+
+function spawnPulse(config) {
+  pulses.push({
+    x1: config.x1, y1: config.y1,
+    x2: config.x2, y2: config.y2,
+    progress: 0,
+    color: config.color,
+    speed: config.speed || 0.012,
+    width: config.width || 2,
+    waypoints: config.waypoints || null
+  });
+}
+
+// ── Drawing helpers ─────────────────────────────────────────────────
+function roundRect(x, y, w, h, r, fill, stroke, strokeW) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+  if (fill)   { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = strokeW || 1.5; ctx.stroke(); }
+}
+
+function label(text, x, y, size, color, align, bold) {
+  ctx.font = `${bold ? '600' : '400'} ${size || 11}px system-ui, sans-serif`;
+  ctx.fillStyle = color || '#94a3b8';
+  ctx.textAlign = align || 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x, y);
+}
+
+function line(x1, y1, x2, y2, color, w, dash) {
+  ctx.beginPath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = w || 1.5;
+  if (dash) ctx.setLineDash(dash); else ctx.setLineDash([]);
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function polyline(pts, color, w, dash) {
+  if (!pts || pts.length < 2) return;
+  ctx.beginPath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = w || 1.5;
+  if (dash) ctx.setLineDash(dash); else ctx.setLineDash([]);
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function glow(x, y, r, color) {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, color);
+  g.addColorStop(1, 'transparent');
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = g;
+  ctx.fill();
+}
+
+// ── Lerp along a path ───────────────────────────────────────────────
+function pathPoint(waypoints, progress) {
+  if (!waypoints || waypoints.length < 2) return waypoints?.[0];
+  const n = waypoints.length - 1;
+  // compute total length
+  let segs = [];
+  let total = 0;
+  for (let i = 0; i < n; i++) {
+    const dx = waypoints[i+1].x - waypoints[i].x;
+    const dy = waypoints[i+1].y - waypoints[i].y;
+    const d = Math.sqrt(dx*dx + dy*dy);
+    segs.push(d);
+    total += d;
+  }
+  let target = progress * total;
+  for (let i = 0; i < n; i++) {
+    if (target <= segs[i]) {
+      const t = target / segs[i];
+      return {
+        x: waypoints[i].x + (waypoints[i+1].x - waypoints[i].x) * t,
+        y: waypoints[i].y + (waypoints[i+1].y - waypoints[i].y) * t,
+      };
+    }
+    target -= segs[i];
+  }
+  return waypoints[n];
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  DRAW COMPONENTS
+// ═══════════════════════════════════════════════════════════════════
+function drawSolar() {
+  const { x, y, w, h, cx, cy } = L.solar;
+  const active = isSummer;
+
+  // Panel body
+  roundRect(x, y, w, h, 10,
+    'rgba(15,23,42,0.9)',
+    active ? 'rgba(250,204,21,0.6)' : 'rgba(148,163,184,0.2)', 2);
+
+  // Panel grid lines
+  const rows = 3, cols = 4;
+  ctx.strokeStyle = active ? 'rgba(250,204,21,0.2)' : 'rgba(100,116,139,0.15)';
+  ctx.lineWidth = 0.5;
+  ctx.setLineDash([]);
+  for (let r = 1; r < rows; r++) {
+    const py = y + (h / rows) * r;
+    ctx.beginPath(); ctx.moveTo(x+4, py); ctx.lineTo(x+w-4, py); ctx.stroke();
+  }
+  for (let c = 1; c < cols; c++) {
+    const px = x + (w / cols) * c;
+    ctx.beginPath(); ctx.moveTo(px, y+4); ctx.lineTo(px, y+h-4); ctx.stroke();
+  }
+
+  // Cell fill
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cx2 = x + (w / cols) * c + w / cols / 2;
+      const cy2 = y + (h / rows) * r + h / rows / 2;
+      const pulse = active ? 0.3 + 0.1 * Math.sin(t * 0.04 + r * 1.2 + c * 0.7) : 0.06;
+      ctx.fillStyle = active
+        ? `rgba(250,204,21,${pulse})`
+        : 'rgba(51,65,85,0.5)';
+      const cw = w / cols - 4, ch = h / rows - 4;
+      ctx.fillRect(cx2 - cw/2, cy2 - ch/2, cw, ch);
+    }
+  }
+
+  // Glow when active
+  if (active) {
+    const intensity = 0.35 + 0.08 * Math.sin(t * 0.04);
+    glow(cx, cy, w * 0.9, `rgba(250,204,21,${intensity})`);
+  }
+
+  // Labels
+  label('SOLAR PV ARRAY', cx, y - 11, 9.5, '#facc15', 'center', true);
+  label(active ? '⚡ Generating' : '◉ Standby', cx, y + h + 13, 9, active ? '#facc15' : '#64748b', 'center');
+}
+
+function drawWaterTank() {
+  const { x, y, w, h, cx, cy } = L.water;
+
+  // Outer shell
+  roundRect(x, y, w, h, 10, 'rgba(15,23,42,0.9)', 'rgba(34,211,238,0.4)', 2);
+
+  // Water fill
+  const fillH = h * waterLevel * 0.88;
+  const fillY = y + h - fillH - 4;
+  roundRect(x + 3, fillY, w - 6, fillH, 7,
+    'rgba(6,182,212,0.25)', null);
+
+  // Animated water ripple
+  const rippleY = fillY + 2;
+  ctx.beginPath();
+  ctx.strokeStyle = 'rgba(34,211,238,0.5)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 3; i++) {
+    const wx = x + 3 + (i * (w-6)/3);
+    const wy = rippleY + 3 * Math.sin(t * 0.05 + i * 2.1);
+    if (i === 0) ctx.moveTo(wx, wy); else ctx.lineTo(wx, wy);
+  }
+  ctx.lineTo(x + w - 3, rippleY + 3 * Math.sin(t * 0.05 + 2 * 2.1));
+  ctx.stroke();
+
+  // Level text
+  label(`${Math.round(waterLevel * 100)}%`, cx, cy + 10, 15, '#22d3ee', 'center', true);
+  label('H₂O', cx, cy - 10, 11, 'rgba(34,211,238,0.7)', 'center');
+
+  // Labels
+  label('PURIFIED WATER', cx, y - 11, 9.5, '#22d3ee', 'center', true);
+  label('RESERVOIR', cx, y - 2, 9, '#22d3ee', 'center', true);
+  label('Closed-Loop Return', cx, y + h + 13, 9, '#64748b', 'center');
+}
+
+function drawElectrolyzer() {
+  const { x, y, w, h, cx, cy } = L.electro;
+  const active = isSummer;
+
+  // Outer housing
+  const borderColor = active ? 'rgba(167,139,250,0.7)' : 'rgba(148,163,184,0.2)';
+  roundRect(x, y, w, h, 10, 'rgba(15,23,42,0.9)', borderColor, 2);
+
+  if (active) {
+    // Plasma inner glow
+    const gIntensity = 0.15 + 0.06 * Math.sin(t * 0.07);
+    roundRect(x+4, y+4, w-8, h-8, 7, `rgba(167,139,250,${gIntensity})`, null);
+
+    // Membrane divider (vertical center)
+    ctx.strokeStyle = 'rgba(167,139,250,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.moveTo(cx, y + 10);
+    ctx.lineTo(cx, y + h - 10);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Electrode symbols
+    label('+', x + w * 0.28, cy - 4, 18, 'rgba(248,113,113,0.9)', 'center', true);
+    label('−', x + w * 0.72, cy - 4, 18, 'rgba(34,211,238,0.9)', 'center', true);
+  }
+
+  // Labels
+  label('PEM ELECTROLYZER', cx, y - 11, 9.5, '#a78bfa', 'center', true);
+  label('STACK', cx, y - 2, 9, '#a78bfa', 'center', true);
+  label('H₂O → H₂ + ½O₂', cx, y + h + 13, 9, '#64748b', 'center');
+
+  // Sub-labels inside
+  if (active) {
+    label('Anode (+)', x + w * 0.28, y + h - 18, 8, 'rgba(248,113,113,0.8)', 'center');
+    label('Cathode (−)', x + w * 0.72, y + h - 18, 8, 'rgba(34,211,238,0.8)', 'center');
+  } else {
+    label('STANDBY', cx, cy, 10, '#475569', 'center', true);
+  }
+}
+
+function drawFuelCell() {
+  const { x, y, w, h, cx, cy } = L.fuelcell;
+  const active = !isSummer;
+
+  const borderColor = active ? 'rgba(251,146,60,0.7)' : 'rgba(148,163,184,0.2)';
+  roundRect(x, y, w, h, 10, 'rgba(15,23,42,0.9)', borderColor, 2);
+
+  if (active) {
+    const gIntensity = 0.12 + 0.06 * Math.sin(t * 0.08);
+    roundRect(x+4, y+4, w-8, h-8, 7, `rgba(251,146,60,${gIntensity})`, null);
+
+    // Membrane
+    ctx.strokeStyle = 'rgba(251,146,60,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.moveTo(cx, y + 10);
+    ctx.lineTo(cx, y + h - 10);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Electrode symbols (reversed)
+    label('−', x + w * 0.28, cy - 4, 18, 'rgba(74,222,128,0.9)', 'center', true);
+    label('+', x + w * 0.72, cy - 4, 18, 'rgba(248,113,113,0.9)', 'center', true);
+    label('H₂ in', x + w * 0.28, y + h - 18, 8, 'rgba(74,222,128,0.8)', 'center');
+    label('O₂ in', x + w * 0.72, y + h - 18, 8, 'rgba(248,113,113,0.8)', 'center');
+  } else {
+    label('STANDBY', cx, cy, 10, '#475569', 'center', true);
+  }
+
+  label('PEM FUEL CELL', cx, y - 11, 9.5, '#fb923c', 'center', true);
+  label('STACK', cx, y - 2, 9, '#fb923c', 'center', true);
+  label('H₂ + ½O₂ → H₂O + Power', cx, y + h + 13, 9, '#64748b', 'center');
+}
+
+function drawH2Store() {
+  const { x, y, w, h, cx, cy } = L.h2store;
+
+  // Background panel
+  roundRect(x, y, w, h, 12,
+    'rgba(15,23,42,0.9)',
+    `rgba(74,222,128,${0.3 + 0.05 * Math.sin(t * 0.03)})`, 2);
+
+  // 3 tank cylinders
+  const tankCount = 3;
+  const tw = w * 0.62, th = h / (tankCount + 0.8);
+  const tx = cx - tw / 2;
+
+  for (let i = 0; i < tankCount; i++) {
+    const ty = y + 22 + i * (th + 8);
+    const tc = ty + th / 2;
+
+    // Tank body
+    roundRect(tx, ty, tw, th, 8,
+      'rgba(30,41,59,0.95)',
+      `rgba(74,222,128,0.4)`, 1.5);
+
+    // Fill level bar
+    const fillW = (tw - 8) * h2Level;
+    roundRect(tx + 4, ty + 4, fillW, th - 8, 5,
+      `rgba(22,101,52,${0.5 + 0.1 * Math.sin(t * 0.04 + i)})`, null);
+
+    // Highlight shimmer
+    if (h2Level > 0.05) {
+      roundRect(tx + 4, ty + 4, fillW, (th - 8) * 0.35, 5,
+        'rgba(74,222,128,0.15)', null);
+    }
+
+    // End caps
+    roundRect(tx - 6, ty + th * 0.2, 8, th * 0.6, 4, 'rgba(51,65,85,0.9)', 'rgba(74,222,128,0.3)', 1);
+    roundRect(tx + tw - 2, ty + th * 0.2, 8, th * 0.6, 4, 'rgba(51,65,85,0.9)', 'rgba(74,222,128,0.3)', 1);
+
+    // Valve knob
+    ctx.beginPath();
+    ctx.arc(tx + tw - 2 + 4, tc, 4, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(74,222,128,0.6)';
+    ctx.fill();
+
+    // Pressure gauge
+    ctx.beginPath();
+    ctx.arc(tx + 14, tc, 7, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(15,23,42,0.9)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(74,222,128,0.5)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    const angle = -Math.PI * 0.8 + Math.PI * 1.6 * h2Level;
+    ctx.beginPath();
+    ctx.strokeStyle = '#4ade80';
+    ctx.lineWidth = 1.2;
+    ctx.moveTo(tx + 14, tc);
+    ctx.lineTo(tx + 14 + 5 * Math.cos(angle), tc + 5 * Math.sin(angle));
+    ctx.stroke();
+
+    label(`Tank ${i+1}`, tx + tw / 2, ty - 6, 8, '#4ade80', 'center');
+  }
+
+  // Label
+  label('METAL-HYDRIDE', cx, y - 11, 9.5, '#4ade80', 'center', true);
+  label('H₂ STORAGE STACK', cx, y - 2, 9, '#4ade80', 'center', true);
+  label(`${Math.round(h2Level*100)}% • Low-Pressure • Solid-State`, cx, y + h + 13, 9, '#4ade80', 'center');
+
+  // Pressure label
+  label('~5–30 bar', cx, y + h - 10, 8.5, 'rgba(74,222,128,0.6)', 'center');
+}
+
+function drawCabin() {
+  const { x, y, w, h, cx, cy } = L.cabin;
+  const powered = !isSummer;
+
+  // Main structure
+  roundRect(x, y + h * 0.18, w, h * 0.82, 8,
+    'rgba(15,23,42,0.9)',
+    powered ? 'rgba(250,204,21,0.5)' : 'rgba(148,163,184,0.2)', 2);
+
+  // Roof triangle
+  ctx.beginPath();
+  ctx.moveTo(x - 4, y + h * 0.18 + 2);
+  ctx.lineTo(cx, y + 2);
+  ctx.lineTo(x + w + 4, y + h * 0.18 + 2);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(30,41,59,0.95)';
+  ctx.fill();
+  ctx.strokeStyle = powered ? 'rgba(250,204,21,0.5)' : 'rgba(148,163,184,0.2)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Window (electrical dashboard)
+  const wx = x + w * 0.08, wy = y + h * 0.28, ww = w * 0.50, wh = h * 0.32;
+  roundRect(wx, wy, ww, wh, 4,
+    powered ? 'rgba(250,204,21,0.08)' : 'rgba(30,41,59,0.8)',
+    powered ? 'rgba(250,204,21,0.4)' : 'rgba(51,65,85,0.4)', 1.2);
+
+  if (powered) {
+    // Dashboard readouts
+    label('⚡', wx + ww/2, wy + wh * 0.25, 12, '#facc15', 'center');
+    label('GRID LIVE', wx + ww/2, wy + wh * 0.50, 8, '#facc15', 'center', true);
+    const bars = 3;
+    for (let b = 0; b < bars; b++) {
+      const bh2 = (b + 1) * (wh * 0.08);
+      const pulse = 0.5 + 0.5 * Math.sin(t * 0.1 + b * 1.2);
+      roundRect(wx + 6 + b * 10, wy + wh - 4 - bh2, 7, bh2, 2,
+        `rgba(250,204,21,${0.3 + 0.4 * pulse})`, null);
+    }
+  } else {
+    label('OFF-GRID', wx + ww/2, wy + wh/2, 8, '#475569', 'center', true);
+  }
+
+  // Radiator / Heating element
+  const rx2 = x + w * 0.63, ry = y + h * 0.28, rw = w * 0.30, rh = h * 0.42;
+  roundRect(rx2, ry, rw, rh, 4,
+    'rgba(15,23,42,0.9)',
+    powered ? 'rgba(251,146,60,0.6)' : 'rgba(51,65,85,0.3)', 1.5);
+
+  // Radiator fins
+  const fins = 5;
+  for (let f = 0; f < fins; f++) {
+    const fy = ry + 5 + f * (rh - 10) / fins;
+    const heatColor = powered
+      ? `rgba(251,146,60,${0.4 + 0.3 * Math.sin(t * 0.06 + f)})`
+      : 'rgba(51,65,85,0.3)';
+    line(rx2 + 3, fy, rx2 + rw - 3, fy, heatColor, 2);
+  }
+  if (powered) {
+    // heat shimmer lines
+    for (let s = 0; s < 3; s++) {
+      const sx = rx2 + rw * (0.25 + s * 0.25);
+      const wave = 3 * Math.sin(t * 0.08 + s * 1.5);
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(251,146,60,0.3)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 2]);
+      ctx.moveTo(sx + wave, ry - 2);
+      ctx.bezierCurveTo(sx - wave, ry - 8, sx + wave, ry - 14, sx - wave, ry - 20);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    label('🔥 HEAT', rx2 + rw/2, ry - 8, 8, '#fb923c', 'center', true);
+  }
+
+  // Door
+  roundRect(cx - 8, y + h * 0.76, 16, h * 0.24 - 2, 2,
+    'rgba(30,41,59,0.9)', 'rgba(148,163,184,0.3)', 1);
+  ctx.beginPath();
+  ctx.arc(cx - 2, y + h * 0.88, 2, 0, Math.PI * 2);
+  ctx.fillStyle = '#475569';
+  ctx.fill();
+
+  // Cabin label
+  label('OFF-GRID ALPINE CABIN', cx, y - 11, 9.5, powered ? '#facc15' : '#94a3b8', 'center', true);
+  label(powered ? '⚡ Powered + Heated' : '◉ Standby', cx, y + h + 13, 9, powered ? '#facc15' : '#64748b', 'center');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  DRAW PIPES & WIRES (infrastructure)
+// ═══════════════════════════════════════════════════════════════════
+function drawPipes() {
+  const e  = L.electro;
+  const fc = L.fuelcell;
+  const w  = L.water;
+  const s  = L.solar;
+  const h2 = L.h2store;
+  const c  = L.cabin;
+
+  // ── Solar → Electrolyzer (electric wire, summer only) ──────────
+  const sBottom = { x: s.cx, y: s.y + s.h };
+  const eTop    = { x: e.cx, y: e.y };
+  const sActive = isSummer;
+
+  // Wire routing: down then right
+  const wireY1 = sBottom.y + (eTop.y - sBottom.y) * 0.5;
+  polyline([
+    { x: s.cx, y: sBottom.y },
+    { x: s.cx, y: wireY1 },
+    { x: e.cx, y: wireY1 },
+    { x: e.cx, y: eTop.y }
+  ], sActive ? 'rgba(250,204,21,0.45)' : 'rgba(51,65,85,0.2)', 2, sActive ? [] : [4,4]);
+
+  label('DC Power', (s.cx + e.cx) / 2, wireY1 - 8, 8, sActive ? 'rgba(250,204,21,0.7)' : '#334155', 'center');
+
+  // ── Water Reservoir → Electrolyzer (water feed pipe) ───────────
+  const wTop  = { x: w.cx, y: w.y };
+  const eLeft = { x: e.x, y: e.cy };
+  const pipeY = e.cy;
+  const pipeX = w.cx;
+
+  // Vertical up from water tank, then right into electrolyzer
+  polyline([
+    { x: w.cx, y: w.y },
+    { x: w.cx, y: pipeY },
+    { x: e.x, y: pipeY }
+  ], 'rgba(34,211,238,0.35)', 2.5);
+
+  label('H₂O Feed', (w.cx + e.x) / 2, pipeY - 9, 8, 'rgba(34,211,238,0.6)', 'center');
+
+  // ── Electrolyzer → H2 Storage (H2 output pipe) ─────────────────
+  const eRight = { x: e.x + e.w, y: e.cy - e.h * 0.2 };
+  const h2Left = { x: h2.x, y: h2.cy - h2.h * 0.25 };
+  polyline([
+    { x: e.x + e.w, y: e.cy - e.h * 0.2 },
+    { x: h2.x, y: e.cy - e.h * 0.2 },
+    { x: h2.x, y: h2.cy - h2.h * 0.25 }
+  ], 'rgba(74,222,128,0.35)', 2.5);
+  label('H₂ →', h2.x - 22, e.cy - e.h * 0.2 - 9, 8, 'rgba(74,222,128,0.6)', 'center');
+
+  // ── O2 vent from Electrolyzer (summer) ─────────────────────────
+  polyline([
+    { x: e.cx - 12, y: e.y },
+    { x: e.cx - 12, y: e.y - 28 }
+  ], 'rgba(248,113,113,0.35)', 2);
+  label('O₂ vent', e.cx - 12, e.y - 35, 8, 'rgba(248,113,113,0.6)', 'center');
+
+  // ── H2 Storage → Fuel Cell (winter pipe) ───────────────────────
+  const h2Bottom = { x: h2.cx, y: h2.y + h2.h };
+  const fcRight  = { x: fc.x + fc.w, y: fc.cy + fc.h * 0.1 };
+  polyline([
+    { x: h2.cx, y: h2.y + h2.h },
+    { x: h2.cx, y: fc.cy + fc.h * 0.1 },
+    { x: fc.x + fc.w, y: fc.cy + fc.h * 0.1 }
+  ], 'rgba(74,222,128,0.35)', 2.5);
+  label('H₂ →', h2.cx + 8, h2.y + h2.h + 14, 8, 'rgba(74,222,128,0.6)', 'left');
+
+  // ── Air O2 intake into Fuel Cell ───────────────────────────────
+  const fcRight2 = { x: fc.x + fc.w, y: fc.cy - fc.h * 0.1 };
+  polyline([
+    { x: W * 0.98, y: fc.cy - fc.h * 0.1 },
+    { x: fc.x + fc.w, y: fc.cy - fc.h * 0.1 }
+  ], 'rgba(248,113,113,0.25)', 2);
+  label('Ambient O₂', W * 0.98, fc.cy - fc.h * 0.1 - 8, 8, 'rgba(248,113,113,0.5)', 'right');
+
+  // ── Fuel Cell → Cabin (electric, winter) ───────────────────────
+  const fcTop = { x: fc.cx, y: fc.y };
+  const cBott = { x: c.cx, y: c.y + c.h };
+  // Route: up from fuel cell, right, down into cabin bottom
+  polyline([
+    { x: fc.cx, y: fc.y },
+    { x: fc.cx, y: c.y + c.h + 20 },
+    { x: c.cx, y: c.y + c.h + 20 },
+    { x: c.cx, y: c.y + c.h }
+  ], '!isSummer' ? 'rgba(250,204,21,0.35)' : 'rgba(51,65,85,0.2)', 2,
+  isSummer ? [4, 4] : []);
+
+  // corrected colors
+  const elecColor = !isSummer ? 'rgba(250,204,21,0.35)' : 'rgba(51,65,85,0.2)';
+  ctx.beginPath();
+  ctx.setLineDash(isSummer ? [4, 4] : []);
+  ctx.strokeStyle = elecColor;
+  ctx.lineWidth = 2;
+  ctx.moveTo(fc.cx, fc.y);
+  ctx.lineTo(fc.cx, c.y + c.h + 20);
+  ctx.lineTo(c.cx, c.y + c.h + 20);
+  ctx.lineTo(c.cx, c.y + c.h);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  label('AC Power', (fc.cx + c.cx) / 2, c.y + c.h + 11, 8,
+    !isSummer ? 'rgba(250,204,21,0.7)' : '#334155', 'center');
+
+  // ── CLOSED-LOOP: Fuel Cell water return to Reservoir ───────────
+  // Route: left from fuel cell, down, left into water tank top
+  const returnColor = !isSummer ? 'rgba(34,211,238,0.45)' : 'rgba(51,65,85,0.15)';
+  const dashStyle = isSummer ? [4, 4] : [];
+  polyline([
+    { x: fc.x, y: fc.cy + fc.h * 0.25 },
+    { x: W * 0.26, y: fc.cy + fc.h * 0.25 },
+    { x: W * 0.26, y: w.cy - w.h * 0.3 },
+    { x: w.x + w.w, y: w.cy - w.h * 0.3 }
+  ], returnColor, 2.5, dashStyle);
+
+  label('H₂O Return ♻', W * 0.255, fc.cy + fc.h * 0.25 - 9, 8,
+    !isSummer ? 'rgba(34,211,238,0.7)' : '#334155', 'right');
+
+  // Heat pipe to cabin
+  polyline([
+    { x: fc.x + fc.w * 0.4, y: fc.y },
+    { x: fc.x + fc.w * 0.4, y: c.y + c.h * 0.62 },
+    { x: c.x, y: c.y + c.h * 0.62 }
+  ], !isSummer ? 'rgba(251,146,60,0.35)' : 'rgba(51,65,85,0.15)', 2,
+  isSummer ? [4, 4] : []);
+
+  label('Heat', fc.x + fc.w * 0.4 - 18, fc.y - 8, 8,
+    !isSummer ? 'rgba(251,146,60,0.7)' : '#334155', 'center');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  PARTICLE SPAWNING LOGIC
+// ═══════════════════════════════════════════════════════════════════
+let spawnTimer = 0;
+
+function spawnParticles() {
+  spawnTimer++;
+  if (spawnTimer % 18 !== 0) return;
+
+  const e  = L.electro;
+  const fc = L.fuelcell;
+  const w  = L.water;
+  const s  = L.solar;
+  const h2 = L.h2store;
+  const c  = L.cabin;
+
+  if (isSummer) {
+    // 1. Electric pulse: Solar → Electrolyzer
+    spawnPulse({
+      x1: s.cx, y1: s.y + s.h,
+      x2: e.cx, y2: e.y,
+      color: 'rgba(250,204,21,0.9)',
+      speed: 0.025,
+      width: 3,
+      waypoints: [
+        { x: s.cx, y: s.y + s.h },
+        { x: s.cx, y: (s.y + s.h + e.y) / 2 },
+        { x: e.cx, y: (s.y + s.h + e.y) / 2 },
+        { x: e.cx, y: e.y }
+      ]
+    });
+
+    // 2. Water particle: Reservoir → Electrolyzer
+    if (spawnTimer % 30 === 0) {
+      const pathWater = [
+        { x: w.cx, y: w.y },
+        { x: w.cx, y: e.cy },
+        { x: e.x, y: e.cy }
+      ];
+      particles.push({
+        path: pathWater, progress: 0,
+        color: '#22d3ee', label: 'H₂O', r: 5, speed: 0.008,
+        life: 1, type: 'dot', wobble: 0, pid: Math.random()
+      });
+    }
+
+    // 3. H2 particle: Electrolyzer → H2 Storage
+    if (spawnTimer % 28 === 0) {
+      const pathH2 = [
+        { x: e.x + e.w, y: e.cy - e.h * 0.2 },
+        { x: h2.x, y: e.cy - e.h * 0.2 },
+        { x: h2.x, y: h2.cy - h2.h * 0.25 }
+      ];
+      particles.push({
+        path: pathH2, progress: 0,
+        color: '#4ade80', label: 'H₂', r: 4.5, speed: 0.009,
+        life: 1, type: 'dot', wobble: 0, pid: Math.random()
+      });
+    }
+
+    // 4. O2 vent particles (float up)
+    if (spawnTimer % 22 === 0) {
+      particles.push({
+        x: e.cx - 12 + (Math.random() - 0.5) * 10,
+        y: e.y - 5,
+        vx: (Math.random() - 0.5) * 0.6,
+        vy: -0.8 - Math.random() * 0.4,
+        color: '#f87171', label: 'O₂', r: 3.5,
+        life: 1, type: 'vent', pid: Math.random()
+      });
+    }
+
+  } else {
+    // WINTER MODE
+
+    // 1. H2 from storage → fuel cell
+    if (spawnTimer % 28 === 0) {
+      const pathH2FC = [
+        { x: h2.cx, y: h2.y + h2.h },
+        { x: h2.cx, y: fc.cy + fc.h * 0.1 },
+        { x: fc.x + fc.w, y: fc.cy + fc.h * 0.1 }
+      ];
+      particles.push({
+        path: pathH2FC, progress: 0,
+        color: '#4ade80', label: 'H₂', r: 4.5, speed: 0.009,
+        life: 1, type: 'dot', pid: Math.random()
+      });
+    }
+
+    // 2. O2 from air → fuel cell
+    if (spawnTimer % 32 === 0) {
+      particles.push({
+        path: [
+          { x: W * 0.97, y: fc.cy - fc.h * 0.1 },
+          { x: fc.x + fc.w, y: fc.cy - fc.h * 0.1 }
+        ],
+        progress: 0,
+        color: '#f87171', label: 'O₂', r: 4, speed: 0.018,
+        life: 1, type: 'dot', pid: Math.random()
+      });
+    }
+
+    // 3. Electric pulse: Fuel Cell → Cabin
+    spawnPulse({
+      x1: fc.cx, y1: fc.y,
+      x2: c.cx, y2: c.y + c.h,
+      color: 'rgba(250,204,21,0.95)',
+      speed: 0.022,
+      width: 3,
+      waypoints: [
+        { x: fc.cx, y: fc.y },
+        { x: fc.cx, y: c.y + c.h + 20 },
+        { x: c.cx, y: c.y + c.h + 20 },
+        { x: c.cx, y: c.y + c.h }
+      ]
+    });
+
+    // 4. Heat pulse: Fuel Cell → Cabin radiator
+    if (spawnTimer % 36 === 0) {
+      spawnPulse({
+        x1: fc.x + fc.w * 0.4, y1: fc.y,
+        x2: c.x, y2: c.y + c.h * 0.62,
+        color: 'rgba(251,146,60,0.85)',
+        speed: 0.016,
+        width: 2.5,
+        waypoints: [
+          { x: fc.x + fc.w * 0.4, y: fc.y },
+          { x: fc.x + fc.w * 0.4, y: c.y + c.h * 0.62 },
+          { x: c.x, y: c.y + c.h * 0.62 }
+        ]
+      });
+    }
+
+    // 5. Water byproduct: Fuel Cell → Reservoir (closed loop)
+    if (spawnTimer % 40 === 0) {
+      const pathReturn = [
+        { x: fc.x, y: fc.cy + fc.h * 0.25 },
+        { x: W * 0.26, y: fc.cy + fc.h * 0.25 },
+        { x: W * 0.26, y: w.cy - w.h * 0.3 },
+        { x: w.x + w.w, y: w.cy - w.h * 0.3 }
+      ];
+      particles.push({
+        path: pathReturn, progress: 0,
+        color: '#22d3ee', label: 'H₂O ♻', r: 5, speed: 0.007,
+        life: 1, type: 'dot', pid: Math.random()
+      });
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  UPDATE & DRAW PARTICLES
+// ═══════════════════════════════════════════════════════════════════
+function updateParticles() {
+  // Update path particles
+  particles = particles.filter(p => {
+    if (p.type === 'vent') {
+      p.x  += p.vx;
+      p.y  += p.vy;
+      p.life -= 0.012;
+      if (p.life <= 0) return false;
+
+      // Draw vent particle
+      ctx.globalAlpha = p.life;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+
+      // label
+      ctx.font = '7px system-ui';
+      ctx.fillStyle = p.color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(p.label, p.x, p.y - p.r - 5);
+      ctx.globalAlpha = 1;
+      return true;
+    }
+
+    if (p.path) {
+      p.progress += p.speed;
+      if (p.progress >= 1) return false;
+
+      const pos = pathPoint(p.path, p.progress);
+      if (!pos) return false;
+
+      // Trail
+      const trailLen = 5;
+      for (let i = 0; i < trailLen; i++) {
+        const tp = Math.max(0, p.progress - i * 0.025);
+        const tpos = pathPoint(p.path, tp);
+        if (!tpos) continue;
+        ctx.globalAlpha = ((trailLen - i) / trailLen) * 0.35;
+        ctx.beginPath();
+        ctx.arc(tpos.x, tpos.y, p.r * 0.6, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Glow
+      glow(pos.x, pos.y, p.r * 3.5, p.color.replace(')', ',0.25)').replace('rgb', 'rgba'));
+
+      // Dot
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+
+      // Inner highlight
+      ctx.beginPath();
+      ctx.arc(pos.x - p.r * 0.25, pos.y - p.r * 0.25, p.r * 0.35, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.fill();
+
+      // Label pill background
+      const lw = p.label.length * 5.5 + 6;
+      roundRect(pos.x - lw/2, pos.y - p.r - 16, lw, 11, 3,
+        'rgba(15,23,42,0.85)', p.color + '88', 0.8);
+      label(p.label, pos.x, pos.y - p.r - 10, 7.5, p.color, 'center', true);
+
+      return true;
+    }
+    return false;
+  });
+
+  // Update wire pulses
+  pulses = pulses.filter(pu => {
+    pu.progress += pu.speed;
+    if (pu.progress >= 1) return false;
+
+    const pts = pu.waypoints;
+    const pos = pathPoint(pts, pu.progress);
+    if (!pos) return false;
+
+    // Draw pulse blob with glow
+    glow(pos.x, pos.y, 14, pu.color.replace('0.9', '0.3').replace('0.95', '0.3'));
+
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = pu.color;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 2, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+
+    return true;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  LEVEL UPDATES (slow drain/fill)
+// ═══════════════════════════════════════════════════════════════════
+let levelTimer = 0;
+function updateLevels() {
+  levelTimer++;
+  if (levelTimer % 90 !== 0) return;   // update every ~1.5s
+
+  const rate = 0.004;
+  if (isSummer) {
+    waterLevel = Math.max(0.08, waterLevel - rate);
+    h2Level    = Math.min(0.97, h2Level    + rate);
+  } else {
+    h2Level    = Math.max(0.05, h2Level    - rate);
+    waterLevel = Math.min(0.97, waterLevel + rate);
+  }
+
+  // UI
+  document.getElementById('waterBar').style.width = Math.round(waterLevel * 100) + '%';
+  document.getElementById('h2Bar').style.width    = Math.round(h2Level    * 100) + '%';
+  document.getElementById('waterVal').innerHTML   = Math.round(waterLevel * 100) + '<span>%</span>';
+  document.getElementById('h2Val').innerHTML      = Math.round(h2Level    * 100) + '<span>%</span>';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  BACKGROUND & SCENE AMBIENCE
+// ═══════════════════════════════════════════════════════════════════
+function drawBackground() {
+  // Sky gradient
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+  if (isSummer) {
+    skyGrad.addColorStop(0, '#0c1a3a');
+    skyGrad.addColorStop(1, '#0f172a');
+  } else {
+    skyGrad.addColorStop(0, '#080c1a');
+    skyGrad.addColorStop(1, '#0f172a');
+  }
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid lines (subtle)
+  ctx.strokeStyle = 'rgba(148,163,184,0.03)';
+  ctx.lineWidth = 1;
+  const gSize = 40;
+  for (let gx = 0; gx < W; gx += gSize) {
+    ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
+  }
+  for (let gy = 0; gy < H; gy += gSize) {
+    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+  }
+
+  // Mountain silhouette (decorative)
+  ctx.fillStyle = 'rgba(15,23,42,0.7)';
+  ctx.beginPath();
+  ctx.moveTo(0, H);
+  ctx.lineTo(0, H * 0.75);
+  ctx.lineTo(W * 0.08, H * 0.55);
+  ctx.lineTo(W * 0.18, H * 0.68);
+  ctx.lineTo(W * 0.28, H * 0.48);
+  ctx.lineTo(W * 0.40, H * 0.62);
+  ctx.lineTo(W * 0.50, H * 0.44);
+  ctx.lineTo(W * 0.60, H * 0.58);
+  ctx.lineTo(W * 0.72, H * 0.45);
+  ctx.lineTo(W * 0.85, H * 0.60);
+  ctx.lineTo(W, H * 0.52);
+  ctx.lineTo(W, H);
+  ctx.closePath();
+  ctx.fill();
+
+  // Sun / Moon indicator
+  if (isSummer) {
+    // Sun glow
+    const sunX = W * 0.08, sunY = H * 0.04;
+    const sunG = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 60);
+    const pulse = 0.15 + 0.05 * Math.sin(t * 0.04);
+    sunG.addColorStop(0, `rgba(250,204,21,${0.4 + pulse})`);
+    sunG.addColorStop(0.4, `rgba(250,204,21,${0.08})`);
+    sunG.addColorStop(1, 'transparent');
+    ctx.beginPath(); ctx.arc(sunX, sunY, 60, 0, Math.PI * 2);
+    ctx.fillStyle = sunG; ctx.fill();
+    ctx.beginPath(); ctx.arc(sunX, sunY, 10, 0, Math.PI * 2);
+    ctx.fillStyle = '#facc15'; ctx.fill();
+  } else {
+    // Moon + stars
+    const moonX = W * 0.08, moonY = H * 0.04;
+    ctx.beginPath(); ctx.arc(moonX, moonY, 10, 0, Math.PI * 2);
+    ctx.fillStyle = '#e2e8f0'; ctx.fill();
+    ctx.beginPath(); ctx.arc(moonX + 4, moonY - 2, 8, 0, Math.PI * 2);
+    ctx.fillStyle = '#080c1a'; ctx.fill();
+
+    // Stars
+    for (let s2 = 0; s2 < 20; s2++) {
+      const sx = (s2 * 137 + 50) % (W * 0.9) + W * 0.05;
+      const sy = (s2 * 97  + 20) % (H * 0.4);
+      const sa = 0.4 + 0.4 * Math.sin(t * 0.03 + s2);
+      ctx.beginPath(); ctx.arc(sx, sy, 1, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(226,232,240,${sa})`; ctx.fill();
+    }
+  }
+
+  // Season label
+  ctx.font = 'bold 10px system-ui';
+  ctx.fillStyle = isSummer ? 'rgba(250,204,21,0.4)' : 'rgba(59,130,246,0.4)';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(isSummer ? '☀ SUMMER — ENERGY STORAGE CYCLE' : '❄ WINTER — POWER GENERATION CYCLE', 16, H - 14);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  MAIN LOOP
+// ═══════════════════════════════════════════════════════════════════
+function frame() {
+  t++;
+  ctx.clearRect(0, 0, W, H);
+
+  drawBackground();
+  drawPipes();
+  drawSolar();
+  drawWaterTank();
+  drawElectrolyzer();
+  drawFuelCell();
+  drawH2Store();
+  drawCabin();
+  spawnParticles();
+  updateParticles();
+  updateLevels();
+
+  requestAnimationFrame(frame);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  MODE TOGGLE
+// ═══════════════════════════════════════════════════════════════════
+const modeToggle = document.getElementById('modeToggle');
+const statusBadge = document.getElementById('statusBadge');
+const stateDesc = document.getElementById('stateDesc');
+
+const STATES = {
+  summer: `<em>☀️ Solar electrolysis active.</em> PV array is splitting H₂O molecules — oxygen vents to atmosphere while green hydrogen absorbs into the metal-hydride alloy storage stack for winter.`,
+  winter: `<em>❄️ Fuel cell generation active.</em> Metal-hydride storage releases H₂ — it reacts with ambient O₂ in the PEM cell, producing AC power + heat for the cabin, and clean water that returns to the reservoir.`
+};
+
+modeToggle.addEventListener('change', () => {
+  isSummer = !modeToggle.checked;
+  particles = [];
+  pulses = [];
+  spawnTimer = 0;
+
+  if (isSummer) {
+    statusBadge.textContent = 'Summer Mode Active';
+    statusBadge.className = 'status-badge summer';
+  } else {
+    statusBadge.textContent = 'Winter Mode Active';
+    statusBadge.className = 'status-badge winter';
+  }
+  stateDesc.innerHTML = isSummer ? STATES.summer : STATES.winter;
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  RESIZE
+// ═══════════════════════════════════════════════════════════════════
+function resize() {
+  calcLayout();
+  particles = [];
+  pulses = [];
+}
+
+window.addEventListener('resize', resize);
+calcLayout();
+frame();
+</script>
+</body>
+</html>
