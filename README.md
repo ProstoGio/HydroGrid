@@ -1,90 +1,153 @@
-https://prostogio.github.io/HydroGrid/
-# HydroGrid 🏔️🔋💧
+<div align="center">
 
-> **English** | **[ქართული](#ქართული-ვერსია)**
+# 🏔️ HydroGrid 🔋💧
 
-**HydroGrid** is an eco-friendly, seasonal, closed-loop green hydrogen energy storage system designed to provide reliable, year-round power to high-altitude off-grid facilities in extreme alpine environments.
+### Seasonal Green Hydrogen Energy Storage for Off-Grid Alpine Facilities
 
----
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen?style=for-the-badge&logo=githubpages)](https://prostogio.github.io/HydroGrid/)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](#)
+[![Made with C++](https://img.shields.io/badge/control%20layer-C%2B%2B-00599C?style=for-the-badge&logo=cplusplus)](#)
+[![Made with JS](https://img.shields.io/badge/simulation-HTML%2FJS-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](#)
 
-## 🇺🇸 English Version
+**A closed-loop hydrogen system that stores summer solar surplus and releases it as winter power — with pure water as the only byproduct.**
 
-### 📌 Overview
-Various facilities located in high-altitude regions, such as research stations, meteorological outposts, and ranger cabins, primarily rely on solar energy. However, during the winter, due to severe blizzards, low temperatures, and reduced sunlight, they are often left without electricity. Conventional lithium-ion batteries lose their efficiency at temperatures below 0°C and sometimes fail completely, making the use of diesel generators unavoidable.
+[🌐 Live Simulation](https://prostogio.github.io/HydroGrid/) · [English](#-overview) · [ქართული](#-პროექტის-მიმოხილვა)
 
-Transporting diesel fuel on difficult, icy mountain roads is highly expensive, hazardous, and sometimes completely impossible when roads are closed due to extreme weather conditions. Furthermore, generators are noisy, emit harmful greenhouse gases, and negatively impact the surrounding ecosystem—which is particularly problematic in protected natural zones.
-
-Our project aims to create an eco-friendly and stable energy system for high-altitude facilities that operates reliably year-round. HydroGrid utilizes hydrogen technology to establish a completely closed energy cycle where the only byproduct is pure, distilled water. This system allows us to store excess energy generated during the summer for winter use with virtually zero energy loss, providing a clean, sustainable energy source capable of functioning in even the most extreme environmental conditions.
-
----
-
-### 🔄 The Closed-Loop Architecture
-Unlike typical battery setups or open-ended hydrogen designs, HydroGrid operates on a self-contained, infinite molecular loop:
-☀️ Summer (Solar Excess)                     ❄️ Winter (Power Deficit)
-
-Purified Water Reservoir                     Metal-Hydride H₂ Storage
-│                                              │
-▼                                              ▼
-PEM Electrolyzer Stack  ───────────────►       PEM Fuel Cell Stack
-(Splits H₂O to H₂)                         (Combines H₂ with Air O₂)
-│                                              │
-▼                                              ▼
-Vents harmless O₂ to air                     Outputs: Electricity + Heat
-│
-▼
-Recovers H₂O back to tank! 🔄
-1. **Water Reservoir (H₂O):** The starting and ending point. It supplies purified water to the system during seasonal transitions.
-2. **PEM Electrolyzer:** During the summer, excess solar voltage splits water into Hydrogen (H₂) and Oxygen (O₂). The oxygen is safely vented, while hydrogen is routed to storage.
-3. **Solid-State Metal-Hydride Storage:** Hydrogen is bound chemically within a solid alloy lattice at low pressures (<30 bar). This completely eliminates cold-weather degradation, leaks, or high-pressure explosive risks.
-4. **PEM Fuel Cell:** During winter, hydrogen is combined with ambient oxygen, generating electricity and heat for the cabin.
-5. **Condensate Return:** The chemical byproduct of the fuel cell reaction is pure liquid water (H₂O), which is condensed and returned to the water reservoir, closing the loop.
+</div>
 
 ---
 
-### 💻 System Control & Micro-Loop Simulation
-The orchestration of this hybrid power topology is managed by a software control layer written in **C++ for microcontrollers**, utilizing a robust **State-Machine** design pattern to transition safely between storage and generation phases.
+## 📑 Table of Contents
 
-We have built an interactive web-based visual simulation of the molecular splitting and recombining cycle to demonstrate the closed water loop in real-time.
-
-# HydroGrid 🏔️🔋💧
-
-**HydroGrid** არის ეკოლოგიურად სუფთა, სეზონური, დახურული ციკლის მქონე მწვანე წყალბადის ენერგოსისტემა. იგი შექმნილია მაღალმთიან რეგიონებში მდებარე ავტონომიური ობიექტების სტაბილური, მთელი წლის განმავლობაში ელექტროენერგიითა და სითბოთი უზრუნველყოფისთვის ექსტრემალურ კლიმატურ პირობებში.
+- [Overview](#-overview)
+- [The Problem](#-the-problem)
+- [The Closed-Loop Architecture](#-the-closed-loop-architecture)
+- [System Control & Simulation](#-system-control--simulation)
+- [ქართული ვერსია](#-პროექტის-მიმოხილვა)
 
 ---
+
+## 🌍 Overview
+
+Research stations, meteorological outposts, and ranger cabins in high-altitude regions rely almost entirely on solar power — until winter arrives. Blizzards, sub-zero temperatures, and shrinking daylight leave them exposed, since lithium-ion batteries lose efficiency below 0°C and can fail outright, forcing a fallback to diesel generators.
+
+**HydroGrid removes that dependency.** It captures excess summer solar energy, converts it to hydrogen, stores it safely through winter, and converts it back into electricity and heat exactly when it's needed — in a fully closed loop where the only byproduct is pure, distilled water.
+
+<details>
+<summary><b>💭 Why does this matter? (click to expand)</b></summary>
+<br>
+
+Diesel logistics in alpine terrain are expensive, dangerous, and sometimes impossible — icy roads close entirely during the worst weather, right when fuel is needed most. Generators are also loud, emissions-heavy, and disruptive to the protected ecosystems these facilities usually sit within. HydroGrid sidesteps all of it: no fuel deliveries, no combustion emissions, no seasonal energy loss.
+
+</details>
+
+## ⚠️ The Problem
+
+| Challenge | Conventional Approach | Limitation |
+|---|---|---|
+| Winter power gap | Diesel generators | Costly, hazardous fuel transport; road closures |
+| Cold-weather storage | Lithium-ion batteries | Efficiency collapses below 0°C |
+| Environmental impact | Combustion engines | Noise, emissions, ecosystem disruption |
+| Energy carryover | Grid storage | Not viable off-grid |
+
+## 🔄 The Closed-Loop Architecture
+
+Unlike conventional battery setups or open-ended hydrogen designs, HydroGrid runs on a self-contained, infinite molecular loop:
+
+```mermaid
+flowchart LR
+    subgraph Summer["☀️ Summer — Solar Excess"]
+        W[💧 Water Reservoir] -->|excess solar voltage| E[⚡ PEM Electrolyzer]
+        E -->|H₂| S[🔋 Metal-Hydride Storage]
+        E -->|O₂| V((vented safely))
+    end
+
+    subgraph Winter["❄️ Winter — Power Deficit"]
+        S -->|H₂ released| F[🔥 PEM Fuel Cell]
+        F -->|+ ambient O₂| OUT[⚡ Electricity + Heat]
+        F -->|condensate| W
+    end
+
+    Summer -.-> Winter
+    Winter -.->|water returns| Summer
+```
+
+| Stage | Component | Function |
+|---|---|---|
+| 1️⃣ | **Water Reservoir (H₂O)** | Starting and ending point; supplies purified water each season |
+| 2️⃣ | **PEM Electrolyzer** | Splits water into H₂ and O₂ using summer solar surplus; O₂ is safely vented |
+| 3️⃣ | **Metal-Hydride Storage** | Binds H₂ in a solid alloy lattice at low pressure (<30 bar) — no cold-weather degradation, leaks, or explosive risk |
+| 4️⃣ | **PEM Fuel Cell** | Combines stored H₂ with ambient O₂ in winter, producing electricity and heat |
+| 5️⃣ | **Condensate Return** | Fuel-cell byproduct water is condensed and returned to the reservoir, closing the loop |
+
+## 💻 System Control & Simulation
+
+The hybrid power topology is orchestrated by a **C++ control layer** built for microcontrollers, using a **state-machine** design to safely transition between storage and generation phases.
+
+An interactive web-based simulation visualizes the molecular splitting/recombining cycle in real time:
+
+**▶️ [Launch the simulation](https://prostogio.github.io/HydroGrid/)**
+
+---
+---
+
+<div align="center">
+
+## 🇬🇪 ქართული ვერსია
+
+</div>
 
 ## 📌 პროექტის მიმოხილვა
-მაღალმთიან რეგიონებში მდებარე სხვადასხვა ობიექტები, როგორიც არის კვლევითი სადგურები, მეტეოროლოგიური პუნქტები და რეინჯერთა კაბინები, ძირითადად დამოკიდებულნი არიან მზის ენერგიაზე. თუმცა ზამთარში, ძლიერი ქარბუქების, დაბალი ტემპერატურისა და მზის სინათლის შემცირების გამო, ისინი ხშირად ელექტროენერგიის გარეშე რჩებიან. ჩვეულებრივი ლითიუმის ბატარეები 0°C-ზე დაბალ ტემპერატურაზე ეფექტურობას კარგავენ და ზოგჯერ საერთოდ გამოდიან მწყობრიდან, რის შედეგადაც აუცილებელი ხდება დიზელის გენერატორების გამოყენება.
 
-დიზელის საწვავის ტრანსპორტირება რთულ და მოყინულ მთის გზებზე საკმაოდ ძვირი და სახიფათოა. ზოგჯერ შეუძლებელიც, რადგან ექსტრემალურ პირობებში გზები იკეტება კიდეც. ამასთანავე, გენერატორები ქმნიან ხმაურს, გამოყოფენ მავნე აირებს და უარყოფითად მოქმედებენ გარემოზე, რაც განსაკუთრებით პრობლემურია დაცულ ბუნებრივ ზონებში.
+მაღალმთიან რეგიონებში მდებარე ობიექტები — კვლევითი სადგურები, მეტეოროლოგიური პუნქტები, რეინჯერთა კაბინები — ძირითადად მზის ენერგიაზეა დამოკიდებული. ზამთარში კი ქარბუქებისა და დაბალი ტემპერატურის გამო ისინი ხშირად ელექტროენერგიის გარეშე რჩებიან, რადგან ლითიუმის ბატარეები 0°C-ზე დაბლა კარგავენ ეფექტურობას და ზოგჯერ სრულად გამოდიან მწყობრიდან.
 
-ჩვენი პროექტის მიზანია, მაღალმთიანი ობიექტებისთვის შეიქმნას ეკოლოგიურად სუფთა და სტაბილური ენერგოსისტემა, რომელიც იმუშავებს მთელი წლის განმავლობაში. HydroGrid მუშაობს წყალბადის ტექნოლოგიაზე, რომელიც საშუალებას გვაძლევს, შევქმნათ სრულიად დახურული ენერგეტიკული ციკლი, სადაც ერთადერთი გამონაბოლქვი სუფთა, გამოხდილი წყალია (H₂O) და ზაფხულში გამომუშავებული ჭარბი ენერგია ზამთრისთვის შევინახოთ თითქმის ენერგეტიკული დანაკარგების გარეშე, ეკოლოგიურად სუფთა გზით და ვუზრუნველვყოთ სისტემის ფუნქციონირება ყველაზე ექსტრემალურ პირობებშიც.
+**HydroGrid** ხსნის ამ პრობლემას: ზაფხულში ჭარბი მზის ენერგია გარდაიქმნება წყალბადად, ინახება უსაფრთხოდ ზამთრამდე, შემდეგ კი უკან იქცევა დენად და სითბოდ — მთლიანად დახურულ ციკლში, სადაც ერთადერთი გამონაბოლქვი სუფთა წყალია.
 
----
+<details>
+<summary><b>💭 რატომ არის ეს მნიშვნელოვანი?</b></summary>
+<br>
+
+დიზელის ტრანსპორტირება მთის მყინვარულ გზებზე ძვირი და სახიფათოა, ხოლო ექსტრემალურ პირობებში ხშირად სრულიად შეუძლებელი. გენერატორები ასევე ხმაურიანია, გამოყოფენ მავნე აირებს და აზიანებენ დაცულ ეკოსისტემებს. HydroGrid გვერდს უვლის ამ ყველაფერს — არც საწვავის მიწოდებაა საჭირო, არც წვის ემისია და არც სეზონური ენერგოდანაკარგი.
+
+</details>
 
 ## 🔄 დახურული ციკლის პრინციპი
-ჩვეულებრივი ღია სისტემებისგან განსხვავებით, HydroGrid მუშაობს სრულად იზოლირებულ, უსასრულო მოლეკულურ წრეზე:
-☀️ ზაფხული (ჭარბი მზე)                      ❄️ ზამთარი (ენერგიის დეფიციტი)
 
-წყლის რეზერვუარი (H₂O)                      მეტალჰიდრიდული საცავი
-│                                              │
-▼                                              ▼
-PEM ელექტროლიზერი      ───────────────►        PEM საწვავის ელემენტი
-(შლის H₂O-ს წყალბადად)                        (აერთებს H₂-სა და ჟანგბადს)
-│                                              │
-▼                                              ▼
-ჟანგბადი (O₂) გარემოში                        გამომუშავება: დენი + სითბო
-│
-▼
-წყალი ბრუნდება ავზში! 🔄
-. **წყლის რეზერვუარი (H₂O):** სისტემის საწყისი და ბოლო წერტილი. ის ინახავს წყალს, რომელიც სეზონურად გარდაიქმნება ენერგიის მატარებლად.
-2. **PEM ელექტროლიზერი:** ზაფხულში მზის პანელების ჭარბი ელექტროენერგიით შლის წყალს წყალბადად (H₂) და ჟანგბადად (O₂). ჟანგბადი უსაფრთხოდ ნიავდება გარემოში, ხოლო წყალბადი მიემართება საცავისკენ.
-3. **მეტალჰიდრიდული საცავი:** წყალბადი ინახება მყარ მდგომარეობაში, სპეციალური ლითონის კრისტალურ სტრუქტურაში, დაბალ წნევაზე (<30 bar). ეს გამორიცხავს ყინვაში ენერგიის კარგვას, გაჟონვას ან აფეთქების რისკს.
-4. **PEM საწვავის ელემენტი (Fuel Cell):** ზამთარში, მზის არარსებობისას, იღებს შენახულ წყალბადს, აერთებს მას ჰაერის ჟანგბადთან და გამოიმუშავებს დენსა და სითბოს.
-5. **დახურული კონდენსაციის წრედი:** რეაქციის გვერდითი პროდუქტი – წყლის ორთქლი – კონდენსირდება, გადაიქცევა თხევად წყლად და სპეციალური მილებით უკან ბრუნდება საწყის რეზერვუარში შემდეგი წლის ციკლისთვის.
+```mermaid
+flowchart LR
+    subgraph S1["☀️ ზაფხული — ჭარბი მზე"]
+        W[💧 წყლის რეზერვუარი] -->|ჭარბი ენერგია| E[⚡ PEM ელექტროლიზერი]
+        E -->|H₂| ST[🔋 მეტალჰიდრიდული საცავი]
+        E -->|O₂| V((უსაფრთხოდ ნიავდება))
+    end
 
----
+    subgraph S2["❄️ ზამთარი — ენერგიის დეფიციტი"]
+        ST -->|H₂ გამოთავისუფლება| F[🔥 PEM საწვავის ელემენტი]
+        F -->|+ ჰაერის O₂| OUT[⚡ დენი + სითბო]
+        F -->|კონდენსატი| W
+    end
+
+    S1 -.-> S2
+    S2 -.->|წყალი ბრუნდება| S1
+```
+
+| ეტაპი | კომპონენტი | ფუნქცია |
+|---|---|---|
+| 1️⃣ | **წყლის რეზერვუარი** | სისტემის საწყისი და ბოლო წერტილი |
+| 2️⃣ | **PEM ელექტროლიზერი** | შლის წყალს H₂-ად და O₂-ად ზაფხულის ჭარბი ენერგიით |
+| 3️⃣ | **მეტალჰიდრიდული საცავი** | ინახავს H₂-ს მყარ სტრუქტურაში, დაბალ წნევაზე (<30 bar) |
+| 4️⃣ | **PEM საწვავის ელემენტი** | აერთებს შენახულ H₂-ს ჰაერის O₂-თან, გამოიმუშავებს დენსა და სითბოს |
+| 5️⃣ | **კონდენსაციის წრედი** | რეაქციის შედეგად მიღებული წყალი უბრუნდება რეზერვუარს |
 
 ## 💻 პროგრამული მართვა და სიმულაცია
-ამ ჰიბრიდული სისტემის მუშაობას კოორდინაციას უწევს **C++ ენაზე** დაწერილი მართვის ფენა მიკროკონტროლერებისთვის. ის იყენებს მდგომარეობების აპარატის (**State-Machine**) ალგორითმებს სენსორების მონაცემების დასამუშავებლად და ავარიული გათიშვის (**E-Stop**) უსაფრთხოების რეჟიმების გასააქტიურებლად.
 
-წყლისა და გაზის მოლეკულების დაშლისა და შეერთების პროცესის საილუსტრაციოდ შექმნილია ინტერაქტიული HTML/JS ანიმაცია, რომლის გაშვებაც შესაძლებელია პირდაპირ ბრაუზერში `hydrogrid.html` ფაილის გახსნით.
+სისტემის მუშაობას მართავს **C++**-ზე დაწერილი კონტროლის ფენა მიკროკონტროლერებისთვის, **state-machine** არქიტექტურით უსაფრთხო გადართვისთვის შენახვასა და გამომუშავებას შორის.
+
+**▶️ [სიმულაციის გაშვება](https://prostogio.github.io/HydroGrid/)**
+
+<div align="center">
+
+---
+Made with ❄️ for extreme environments
+
+</div>
