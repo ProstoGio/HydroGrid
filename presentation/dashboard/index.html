@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>HydroGrid — Live Simulation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root {
+    --navy: #0B1F33;
+    --navy-deep: #071522;
+    --panel: #10304B;
+    --panel-line: #1C4363;
+    --teal: #35D6A9;
+    --amber: #E8B04B;
+    --coral: #E8654B;
+    --cream: #F2EFE6;
+    --muted: #7E93A8;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; background: var(--navy); color: var(--cream);
+    font-family: 'Iowan Old Style', 'Georgia', serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: 'SF Mono', 'Consolas', monospace; }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 56px 24px 90px; }
+
+  header { margin-bottom: 48px; }
+  .eyebrow {
+    font-family: 'SF Mono', monospace; font-size: 12px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--teal); margin-bottom: 14px;
+  }
+  h1 {
+    font-size: clamp(36px, 6vw, 58px); margin: 0 0 10px; line-height: 1.05;
+    letter-spacing: -0.01em;
+  }
+  .subtitle { color: var(--muted); font-size: 17px; max-width: 640px; line-height: 1.5; }
+
+  .grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 40px;
+  }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--panel-line);
+    border-radius: 14px; padding: 26px 28px;
+  }
+  .card h2 {
+    font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--muted); margin: 0 0 20px; font-family: 'SF Mono', monospace; font-weight: 600;
+  }
+
+  .slider-row { margin-bottom: 22px; }
+  .slider-row:last-child { margin-bottom: 0; }
+  .slider-label {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 8px; font-size: 15px;
+  }
+  .slider-value { font-family: 'SF Mono', monospace; color: var(--teal); font-size: 15px; }
+  input[type="range"] {
+    width: 100%; height: 4px; border-radius: 2px; background: var(--panel-line);
+    -webkit-appearance: none; appearance: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--teal); cursor: pointer; box-shadow: 0 0 0 4px rgba(53,214,169,0.15);
+  }
+
+  .status-panel {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; gap: 24px; padding: 30px 28px;
+    flex-wrap: wrap;
+  }
+  .status-dot {
+    width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .status-text h3 { margin: 0 0 4px; font-size: 22px; }
+  .status-text p { margin: 0; color: var(--muted); font-size: 14px; }
+
+  .stat-row { display: flex; gap: 40px; margin-left: auto; flex-wrap: wrap; }
+  .stat { text-align: right; }
+  .stat .num { font-family: 'SF Mono', monospace; font-size: 24px; display: block; }
+  .stat .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+  .chart-card { grid-column: 1 / -1; }
+  svg { width: 100%; height: auto; display: block; }
+  .axis-label { fill: var(--muted); font-size: 11px; font-family: 'SF Mono', monospace; }
+  .grid-line { stroke: var(--panel-line); stroke-width: 1; }
+  .tank-line { fill: none; stroke: var(--teal); stroke-width: 2.5; }
+  .tank-fill { fill: var(--teal); opacity: 0.08; }
+  .cap-line { stroke: var(--amber); stroke-width: 1; stroke-dasharray: 4 4; }
+  .fail-marker { fill: var(--coral); }
+
+  footer {
+    margin-top: 50px; padding-top: 24px; border-top: 1px solid var(--panel-line);
+    color: var(--muted); font-size: 13px; line-height: 1.6;
+  }
+  footer a { color: var(--teal); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">HydroGrid · Live Simulation</div>
+    <h1>Panels, tank, storm.<br>Move the sliders.</h1>
+    <p class="subtitle">
+      This runs the actual physics from the project — solar → electrolyzer → storage →
+      fuel cell — against a real 90-day winter (Dec 2017–Feb 2018) recorded at 2,715m in
+      the Georgian Caucasus, with an added 8-day storm worse than anything in the real record.
+    </p>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <h2>System Design</h2>
+      <div class="slider-row">
+        <div class="slider-label"><span>Panel area</span><span class="slider-value" id="v-area">11 m²</span></div>
+        <input type="range" id="area" min="2" max="30" value="11" step="0.5">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label"><span>Tank capacity</span><span class="slider-value" id="v-tank">1.0 kg</span></div>
+        <input type="range" id="tank" min="0" max="10" value="1" step="0.1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label"><span>Cabin daily need</span><span class="slider-value" id="v-need">3.0 kWh</span></div>
+        <input type="range" id="need" min="1" max="8" value="3" step="0.1">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Cost Assumptions</h2>
+      <div class="slider-row">
+        <div class="slider-label"><span>Panel cost</span><span class="slider-value" id="v-pcost">$180/m²</span></div>
+        <input type="range" id="pcost" min="50" max="400" value="180" step="10">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label"><span>Hydride cost</span><span class="slider-value" id="v-hcost">$1,800/kg H₂</span></div>
+        <input type="range" id="hcost" min="200" max="3000" value="1800" step="50">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label"><span>Scenario</span><span class="slider-value" id="v-scenario">Stress-tested</span></div>
+        <input type="range" id="scenario" min="0" max="1" value="1" step="1">
+      </div>
+    </div>
+
+    <div class="card status-panel">
+      <div class="status-dot" id="status-dot"></div>
+      <div class="status-text">
+        <h3 id="status-headline">—</h3>
+        <p id="status-sub">—</p>
+      </div>
+      <div class="stat-row">
+        <div class="stat"><span class="num mono" id="stat-cost">—</span><span class="lbl">Est. cost</span></div>
+        <div class="stat"><span class="num mono" id="stat-waste">—</span><span class="lbl">Wasted kWh</span></div>
+        <div class="stat"><span class="num mono" id="stat-min">—</span><span class="lbl">Min tank level</span></div>
+      </div>
+    </div>
+
+    <div class="card chart-card">
+      <h2>Tank Level Over the Winter</h2>
+      <svg id="chart" viewBox="0 0 1000 320"></svg>
+    </div>
+  </div>
+
+  <footer>
+    Physics constants: panel efficiency 20% · electrolyzer 75% · fuel cell 55% · H₂ energy
+    content 39.7 kWh/kg (HHV, deliberately conservative). Data: PVGIS-SARAH3, 42.44°N 45.66°E,
+    2,715m, real hourly measurements 2016–2020. Full source, derivations, and C++ implementation
+    at <a href="https://github.com/prostogio/HydroGrid" target="_blank">github.com/prostogio/HydroGrid</a>.
+  </footer>
+
+</div>
+
+<script>
+const REAL_WINTER = [3.8604,3.8755,3.7747,3.6810,3.5895,0.4006,0.5063,0.2900,3.2452,3.7860,2.1708,3.2626,3.6982,1.6637,3.6299,2.8693,3.7480,2.2650,1.9375,0.5979,0.3990,0.3686,0.3682,0.5766,3.6274,3.7146,3.7994,1.6362,3.7823,3.6640,1.1999,0.4501,2.0316,3.6229,3.6440,3.1382,2.8103,3.7314,3.6532,1.8172,2.9946,3.3300,1.0800,1.3486,2.3684,3.3879,3.8100,3.9200,1.3477,2.5533,3.7093,3.7827,1.4709,3.8212,2.5740,2.4153,4.7591,4.8055,4.2929,5.0163,4.9324,3.1560,5.0794,5.0625,4.9034,2.1487,4.4567,2.4770,5.4698,5.5789,0.7943,4.5988,1.1180,2.4973,3.4376,5.1491,5.7643,5.7414,5.6617,1.4841,1.6820,5.6867,5.2608,5.7603,5.8202,5.9690,6.0586,2.8969,5.1635,5.8811];
+
+// Stressed version: extend the real Dec 20-24 storm (indices 19-23) into an 8-day
+// storm (indices 19-26) at the same severity as the worst real day.
+const STRESSED_WINTER = REAL_WINTER.slice();
+for (let i = 19; i <= 26; i++) STRESSED_WINTER[i] = 0.40;
+
+const ETA_SOLAR = 0.20, ETA_ELEC = 0.75, ETA_FC = 0.55, H2_ENERGY = 39.7;
+
+function solarEnergy(irr, area) { return irr * area * ETA_SOLAR; }
+function hydrogenMass(Q) { return (Q * ETA_ELEC) / H2_ENERGY; }
+function energyFromFC(m) { return m * H2_ENERGY * ETA_FC; }
+function massForDeficit(Q) { return Q / (H2_ENERGY * ETA_FC); }
+function updLevel(cur, amt, max) {
+  const nw = cur + amt;
+  if (nw > max) return max;
+  if (nw < 0) return 0;
+  return nw;
+}
+
+function simulate(data, area, need, tankMax) {
+  let level = 0, wasted = 0, failDay = -1;
+  const trace = [level];
+  for (let i = 0; i < data.length; i++) {
+    const E = solarEnergy(data[i], area);
+    if (E > need) {
+      const surplus = E - need;
+      const m = hydrogenMass(surplus);
+      const before = level;
+      level = updLevel(level, m, tankMax);
+      wasted += (m - (level - before));
+    } else if (E < need) {
+      const deficit = need - E;
+      const m = massForDeficit(deficit);
+      if (level - m < 0) {
+        if (failDay < 0) failDay = i;
+        level = updLevel(level, -level, tankMax); // drains what's left
+      } else {
+        level = updLevel(level, -m, tankMax);
+      }
+    }
+    trace.push(level);
+  }
+  return { trace, wasted, wastedKWh: energyFromFC(wasted), failDay, survived: failDay < 0 };
+}
+
+const els = {
+  area: document.getElementById('area'), tank: document.getElementById('tank'),
+  need: document.getElementById('need'), pcost: document.getElementById('pcost'),
+  hcost: document.getElementById('hcost'), scenario: document.getElementById('scenario'),
+};
+
+function fmt(n, d=1) { return n.toLocaleString(undefined, {minimumFractionDigits:d, maximumFractionDigits:d}); }
+
+function render() {
+  const area = parseFloat(els.area.value);
+  const tank = parseFloat(els.tank.value);
+  const need = parseFloat(els.need.value);
+  const pcost = parseFloat(els.pcost.value);
+  const hcost = parseFloat(els.hcost.value);
+  const useStress = els.scenario.value === '1';
+
+  document.getElementById('v-area').textContent = `${fmt(area,1)} m²`;
+  document.getElementById('v-tank').textContent = `${fmt(tank,1)} kg`;
+  document.getElementById('v-need').textContent = `${fmt(need,1)} kWh`;
+  document.getElementById('v-pcost').textContent = `$${pcost}/m²`;
+  document.getElementById('v-hcost').textContent = `$${hcost.toLocaleString()}/kg H₂`;
+  document.getElementById('v-scenario').textContent = useStress ? 'Stress-tested (+8-day storm)' : 'Real historical data';
+
+  const data = useStress ? STRESSED_WINTER : REAL_WINTER;
+  const result = simulate(data, area, need, tank);
+  const cost = area * pcost + tank * hcost;
+
+  const dot = document.getElementById('status-dot');
+  const headline = document.getElementById('status-headline');
+  const sub = document.getElementById('status-sub');
+
+  if (result.survived) {
+    dot.style.background = 'var(--teal)';
+    dot.style.boxShadow = '0 0 16px 2px rgba(53,214,169,0.5)';
+    headline.textContent = 'Survives the full winter';
+    sub.textContent = useStress
+      ? 'Held up through the real record and the added 8-day storm.'
+      : 'Held up through all 90 real recorded days.';
+  } else {
+    dot.style.background = 'var(--coral)';
+    dot.style.boxShadow = '0 0 16px 2px rgba(232,101,75,0.5)';
+    headline.textContent = `Fails on day ${result.failDay + 1}`;
+    sub.textContent = 'Tank ran dry before the deficit was covered — try more panel area or tank capacity.';
+  }
+
+  document.getElementById('stat-cost').textContent = `$${cost.toLocaleString(undefined,{maximumFractionDigits:0})}`;
+  document.getElementById('stat-waste').textContent = fmt(result.wastedKWh, 1);
+  document.getElementById('stat-min').textContent = `${fmt(Math.min(...result.trace), 2)} kg`;
+
+  drawChart(result.trace, tank, result.failDay);
+}
+
+function drawChart(trace, tankMax, failDay) {
+  const svg = document.getElementById('chart');
+  const W = 1000, H = 320, padL = 46, padR = 20, padT = 20, padB = 30;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+  const maxVal = Math.max(tankMax, ...trace, 0.1) * 1.15;
+
+  const x = i => padL + (i / (trace.length - 1)) * innerW;
+  const y = v => padT + innerH - (v / maxVal) * innerH;
+
+  let path = `M ${x(0)} ${y(trace[0])}`;
+  for (let i = 1; i < trace.length; i++) path += ` L ${x(i)} ${y(trace[i])}`;
+  let area = path + ` L ${x(trace.length-1)} ${y(0)} L ${x(0)} ${y(0)} Z`;
+
+  let gridLines = '';
+  for (let g = 0; g <= 4; g++) {
+    const gy = padT + (innerH / 4) * g;
+    gridLines += `<line class="grid-line" x1="${padL}" y1="${gy}" x2="${W-padR}" y2="${gy}"/>`;
+    const val = maxVal * (1 - g/4);
+    gridLines += `<text class="axis-label" x="${padL-8}" y="${gy+4}" text-anchor="end">${val.toFixed(1)}</text>`;
+  }
+
+  const capY = y(tankMax);
+  const capLine = `<line class="cap-line" x1="${padL}" y1="${capY}" x2="${W-padR}" y2="${capY}"/>
+    <text class="axis-label" x="${W-padR}" y="${capY-6}" text-anchor="end" fill="var(--amber)">max capacity</text>`;
+
+  let failMarker = '';
+  if (failDay >= 0) {
+    const fx = x(failDay + 1);
+    failMarker = `<circle class="fail-marker" cx="${fx}" cy="${y(0)}" r="5"/>
+      <text class="axis-label" x="${fx}" y="${H-8}" text-anchor="middle" fill="var(--coral)">fail</text>`;
+  }
+
+  svg.innerHTML = `
+    ${gridLines}
+    ${capLine}
+    <path class="tank-fill" d="${area}"/>
+    <path class="tank-line" d="${path}"/>
+    ${failMarker}
+    <text class="axis-label" x="${padL}" y="${H-8}">day 1</text>
+    <text class="axis-label" x="${W-padR}" y="${H-8}" text-anchor="end">day ${trace.length-1}</text>
+  `;
+}
+
+Object.values(els).forEach(el => el.addEventListener('input', render));
+render();
+</script>
+</body>
+</html>
