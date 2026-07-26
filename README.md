@@ -23,6 +23,7 @@
 - [The Problem](#-the-problem)
 - [The Closed-Loop Architecture](#-the-closed-loop-architecture)
 - [Simulation & Real-Data Validation](#-simulation--real-data-validation)
+- [Why Not Just Batteries?](#-why-not-just-batteries)
 - [System Control & Simulation](#-system-control--simulation)
 - [Repository Structure](#-repository-structure)
 - [ქართული ვერსია](#-პროექტის-მიმოხილვა)
@@ -147,6 +148,34 @@ need its own historical solar data run back through the same pipeline.
 
 </details>
 
+## 🔋 Why Not Just Batteries?
+
+A fair question, and one worth actually testing rather than assuming the answer. The
+interactive dashboard includes a **Li-Ion vs. LiFePO4 vs. Hydrogen** toggle, using real 2026
+battery pricing and real cold-weather capacity derating for each chemistry, run against the
+exact same real winter data as the hydrogen results above.
+
+**The receipts:**
+
+| Storage | Config | Result vs. real + stress-tested winter |
+|---|---|---|
+| Hydrogen | 16 m² panels, **1 kg** tank | ✅ Survives, ~$4,680 |
+| Li-Ion | 16 m² panels, **10 kWh** battery | ❌ Fails on day 8, ~$4,380 |
+| LiFePO4 | 16 m² panels, **10 kWh** battery | ❌ Fails on day 23, ~$4,680 |
+
+At **roughly the same total cost**, neither battery chemistry survives — even fully charged
+on day 1, before winter even starts. The reason isn't capacity on paper, it's what cold does
+to that capacity: standard Li-Ion cells can lose roughly half their usable capacity around
+−20°C, and even LiFePO4 — which handles cold meaningfully better — still loses a real chunk
+of usable capacity exactly when it's needed most. A "10 kWh" battery in a real alpine winter
+is quietly a 4–6 kWh battery, and the math just doesn't recover from that.
+
+Hydrogen storage doesn't have this problem — a 1 kg metal-hydride tank holds 1 kg regardless
+of outside temperature. This is precisely the failure mode described back in
+[The Problem](#-the-problem), now demonstrated with real numbers instead of asserted as a
+premise. **Try it yourself** in the [dashboard](https://prostogio.github.io/HydroGrid/presentation/dashboard/)
+— crank the battery slider up and see how much nameplate capacity it actually takes to catch up.
+
 ## 💻 System Control & Simulation
 
 The hybrid power topology is orchestrated by a **C++ control layer**, using a
@@ -239,6 +268,12 @@ flowchart LR
 კონტროლერი გატესტილია საქართველოს კავკასიონის რეალურ, 5-წლიან, საათობრივ მზის მონაცემებზე (PVGIS-SARAH3), 2,715 მეტრ სიმაღლეზე — არა სინთეზურ ამინდზე. რეალურ მონაცემებში ნაპოვნი ყველაზე ცუდი ზედიზედ დაბალმზიანი პერიოდი იყო 5 დღე. შემდეგ სისტემა შემოწმდა კიდევ უფრო რთულ, ხელოვნურად გახანგრძლივებულ 8-დღიან შტორმის სცენარზეც, რეალურ ჩანაწერზე უარესზე. ავტომატურმა ძიების ხელსაწყომ გადაამოწმა პანელის ფართობისა და ავზის მოცულობის კომბინაციები რეალური ღირებულებების მიხედვით (~$180/მ² პანელი, ~$1,800/კგ მეტალჰიდრიდის ეფექტური ღირებულება), ასევე ითვალისწინებს დაკარგულ ჭარბ ენერგიას.
 
 **კვლევის პატიოსანი ფარგლები:** ნაპოვნი პანელისა და ავზის ზომები სწორია ამ კონკრეტული საცდელი წერტილის რეალურ კლიმატურ მონაცემებზე დაყრდნობით — HydroGrid წარმოადგენს ზომების განსაზღვრის **მეთოდოლოგიას**, და არა უნივერსალურ სპეციფიკაციას.
+
+## 🔋 რატომ არა უბრალოდ ბატარეები?
+
+სამართლიანი კითხვაა, და ჯობია ის რეალურად შემოწმდეს, ვიდრე უბრალოდ ვივარაუდოთ პასუხი. ინტერაქტიულ დაფას აქვს **Li-Ion / LiFePO4 / წყალბადის** გადამრთველი, რეალური 2026 წლის ფასებითა და თითოეული ქიმიის ცივ ამინდში რეალური ტევადობის კლებით, იმავე რეალურ ზამთრის მონაცემებზე გატესტილი.
+
+**რეალური შედეგები:** 16 მ² პანელით, წყალბადის 1 კგ ავზი უძლებს სრულ (რეალურ + ხელოვნურად გართულებულ) ზამთარს ~$4,680-ად. იმავე ღირებულების მიდამოში, არც Li-Ion (10 კვტ.სთ) და არც LiFePO4 (10 კვტ.სთ) ვერ უძლებს — მე-8 ან 23-ე დღეს ჩავარდნით, მიუხედავად იმისა, რომ პირველივე დღეს სავსეა. მიზეზი ცივ ამინდში ტევადობის რეალური კლებაა — 10 კვტ.სთ ბატარეა ცივ მთაში ფაქტობრივად 4-6 კვტ.სთ-მდე იკლებს, ზუსტად მაშინ, როცა ყველაზე მეტად სჭირდება. მეტალჰიდრიდის ავზს ეს პრობლემა საერთოდ არ აქვს — 1 კგ რჩება 1 კგ ტემპერატურის მიუხედავად. სცადეთ თავად [ინტერაქტიულ დაფაზე](https://prostogio.github.io/HydroGrid/presentation/dashboard/).
 
 ## 💻 პროგრამული მართვა და სიმულაცია
 

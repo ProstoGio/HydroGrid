@@ -107,9 +107,12 @@
     <div class="eyebrow">HydroGrid · Live Simulation</div>
     <h1>Panels, tank, storm.<br>Move the sliders.</h1>
     <p class="subtitle">
-      This runs the actual physics from the project — solar → electrolyzer → storage →
-      fuel cell — against a real 90-day winter (Dec 2017–Feb 2018) recorded at 2,715m in
-      the Georgian Caucasus, with an added 8-day storm worse than anything in the real record.
+      Runs the actual project physics against a real 90-day winter (Dec 2017–Feb 2018)
+      recorded at 2,715m in the Georgian Caucasus, with an added 8-day storm worse than
+      anything in the real record. Storage starts <b>full</b> on day 1 — the assumption
+      being summer surplus already topped it off before winter began. Switch storage type
+      to compare hydrogen against Li-Ion or LiFePO4 batteries, using real 2026 pricing and
+      real cold-weather capacity derating for each.
     </p>
   </header>
 
@@ -117,11 +120,15 @@
     <div class="card">
       <h2>System Design</h2>
       <div class="slider-row">
+        <div class="slider-label"><span>Storage type</span><span class="slider-value" id="v-storage-type">Hydrogen (metal hydride)</span></div>
+        <input type="range" id="storage-type" min="0" max="2" value="0" step="1">
+      </div>
+      <div class="slider-row">
         <div class="slider-label"><span>Panel area</span><span class="slider-value" id="v-area">11 m²</span></div>
         <input type="range" id="area" min="2" max="30" value="11" step="0.5">
       </div>
       <div class="slider-row">
-        <div class="slider-label"><span>Tank capacity</span><span class="slider-value" id="v-tank">1.0 kg</span></div>
+        <div class="slider-label"><span id="tank-label">Tank capacity</span><span class="slider-value" id="v-tank">1.0 kg</span></div>
         <input type="range" id="tank" min="0" max="10" value="1" step="0.1">
       </div>
       <div class="slider-row">
@@ -137,8 +144,8 @@
         <input type="range" id="pcost" min="50" max="400" value="180" step="10">
       </div>
       <div class="slider-row">
-        <div class="slider-label"><span>Hydride cost</span><span class="slider-value" id="v-hcost">$1,800/kg H₂</span></div>
-        <input type="range" id="hcost" min="200" max="3000" value="1800" step="50">
+        <div class="slider-label"><span id="hcost-label">Hydride cost</span><span class="slider-value" id="v-hcost">$1,800/kg H₂</span></div>
+        <input type="range" id="hcost" min="30" max="3000" value="1800" step="10">
       </div>
       <div class="slider-row">
         <div class="slider-label"><span>Scenario</span><span class="slider-value" id="v-scenario">Stress-tested</span></div>
@@ -155,21 +162,25 @@
       <div class="stat-row">
         <div class="stat"><span class="num mono" id="stat-cost">—</span><span class="lbl">Est. cost</span></div>
         <div class="stat"><span class="num mono" id="stat-waste">—</span><span class="lbl">Wasted kWh</span></div>
-        <div class="stat"><span class="num mono" id="stat-min">—</span><span class="lbl">Min tank level</span></div>
+        <div class="stat"><span class="num mono" id="stat-min">—</span><span class="lbl" id="stat-min-label">Min tank level</span></div>
       </div>
     </div>
 
     <div class="card chart-card">
-      <h2>Tank Level Over the Winter</h2>
+      <h2 id="chart-heading">Tank Level Over the Winter</h2>
       <svg id="chart" viewBox="0 0 1000 320"></svg>
     </div>
   </div>
 
   <footer>
-    Physics constants: panel efficiency 20% · electrolyzer 75% · fuel cell 55% · H₂ energy
-    content 39.7 kWh/kg (HHV, deliberately conservative). Data: PVGIS-SARAH3, 42.44°N 45.66°E,
-    2,715m, real hourly measurements 2016–2020. Full source, derivations, and C++ implementation
-    at <a href="https://github.com/prostogio/HydroGrid" target="_blank">github.com/prostogio/HydroGrid</a>.
+    Hydrogen constants: panel efficiency 20% · electrolyzer 75% · fuel cell 55% · H₂ energy
+    content 39.7 kWh/kg (HHV, deliberately conservative). Battery costs and cold-weather
+    derating are rough 2026 market figures (Li-Ion ~$150/kWh, ~45% usable capacity below
+    freezing without heating; LiFePO4 ~$180/kWh, ~60% usable capacity, better but not immune
+    to cold) — real product specs will vary, and neither includes insulation/enclosure cost.
+    Solar data: PVGIS-SARAH3, 42.44°N 45.66°E, 2,715m, real hourly measurements 2016–2020.
+    Full source, derivations, and C++ implementation at
+    <a href="https://github.com/prostogio/HydroGrid" target="_blank">github.com/prostogio/HydroGrid</a>.
   </footer>
 
 </div>
@@ -184,6 +195,17 @@ for (let i = 19; i <= 26; i++) STRESSED_WINTER[i] = 0.40;
 
 const ETA_SOLAR = 0.20, ETA_ELEC = 0.75, ETA_FC = 0.55, H2_ENERGY = 39.7;
 
+// Storage type definitions. Hydrogen stores kg of H2 (converted via electrolyzer/fuel
+// cell, each with real conversion losses). Batteries store kWh directly, but real-world
+// cold conditions reduce the *usable* capacity below nameplate -- represented here as a
+// flat derating factor applied to the configured capacity, a simplification of the real
+// temperature-dependent capacity curve.
+const STORAGE_TYPES = [
+  { key: 'hydrogen', label: 'Hydrogen (metal hydride)', unit: 'kg', costLabel: 'Hydride cost', costUnit: '$/kg H₂', defaultCost: 1800, coldDerate: 1.0 },
+  { key: 'liion',    label: 'Li-Ion battery',           unit: 'kWh', costLabel: 'Li-Ion cost', costUnit: '$/kWh', defaultCost: 150, coldDerate: 0.45 },
+  { key: 'lifepo4',  label: 'LiFePO4 battery',          unit: 'kWh', costLabel: 'LiFePO4 cost', costUnit: '$/kWh', defaultCost: 180, coldDerate: 0.60 },
+];
+
 function solarEnergy(irr, area) { return irr * area * ETA_SOLAR; }
 function hydrogenMass(Q) { return (Q * ETA_ELEC) / H2_ENERGY; }
 function energyFromFC(m) { return m * H2_ENERGY * ETA_FC; }
@@ -195,8 +217,11 @@ function updLevel(cur, amt, max) {
   return nw;
 }
 
-function simulate(data, area, need, tankMax) {
-  let level = 0, wasted = 0, failDay = -1;
+// Hydrogen path: same as before -- surplus goes through electrolyzer (real conversion
+// loss), deficit is covered via fuel cell (another real conversion loss).
+function simulateHydrogen(data, area, need, tankMax) {
+  let level = tankMax; // starts full -- summer surplus has already topped it off before winter begins
+  let wasted = 0, failDay = -1;
   const trace = [level];
   for (let i = 0; i < data.length; i++) {
     const E = solarEnergy(data[i], area);
@@ -211,7 +236,7 @@ function simulate(data, area, need, tankMax) {
       const m = massForDeficit(deficit);
       if (level - m < 0) {
         if (failDay < 0) failDay = i;
-        level = updLevel(level, -level, tankMax); // drains what's left
+        level = updLevel(level, -level, tankMax);
       } else {
         level = updLevel(level, -m, tankMax);
       }
@@ -221,15 +246,69 @@ function simulate(data, area, need, tankMax) {
   return { trace, wasted, wastedKWh: energyFromFC(wasted), failDay, survived: failDay < 0 };
 }
 
+// Battery path: no conversion stages -- surplus/deficit kWh stored/drawn directly.
+// The nameplate capacity is reduced by a cold-derating factor to represent real usable
+// capacity in sub-zero conditions (batteries don't get an electrolyzer/fuel-cell loss,
+// but they do lose real capacity to cold that hydrogen storage doesn't).
+function simulateBattery(data, area, need, capacityKWh, coldDerate) {
+  const effectiveCap = capacityKWh * coldDerate;
+  let level = effectiveCap; // starts full, same summer-fill assumption as hydrogen
+  let wasted = 0, failDay = -1;
+  const trace = [level];
+  for (let i = 0; i < data.length; i++) {
+    const E = solarEnergy(data[i], area);
+    if (E > need) {
+      const surplus = E - need;
+      const before = level;
+      level = updLevel(level, surplus, effectiveCap);
+      wasted += (surplus - (level - before));
+    } else if (E < need) {
+      const deficit = need - E;
+      if (level - deficit < 0) {
+        if (failDay < 0) failDay = i;
+        level = updLevel(level, -level, effectiveCap);
+      } else {
+        level = updLevel(level, -deficit, effectiveCap);
+      }
+    }
+    trace.push(level);
+  }
+  // "wastedKWh" for batteries is just wasted directly, no fuel-cell conversion involved
+  return { trace, wasted, wastedKWh: wasted, failDay, survived: failDay < 0, effectiveCap };
+}
+
+function simulate(data, area, need, capacity, storageType) {
+  if (storageType.key === 'hydrogen') {
+    return simulateHydrogen(data, area, need, capacity);
+  }
+  return simulateBattery(data, area, need, capacity, storageType.coldDerate);
+}
+
 const els = {
   area: document.getElementById('area'), tank: document.getElementById('tank'),
   need: document.getElementById('need'), pcost: document.getElementById('pcost'),
   hcost: document.getElementById('hcost'), scenario: document.getElementById('scenario'),
+  storageType: document.getElementById('storage-type'),
 };
+
+let lastStorageKey = 'hydrogen';
 
 function fmt(n, d=1) { return n.toLocaleString(undefined, {minimumFractionDigits:d, maximumFractionDigits:d}); }
 
 function render() {
+  const storageType = STORAGE_TYPES[parseInt(els.storageType.value)];
+
+  // If the storage type just changed, reset the cost slider + tank slider to sensible
+  // defaults for that chemistry, since $1800/kg H2 makes no sense as a battery $/kWh guess
+  if (storageType.key !== lastStorageKey) {
+    els.hcost.value = storageType.defaultCost;
+    els.hcost.min = storageType.key === 'hydrogen' ? 200 : 30;
+    els.hcost.max = storageType.key === 'hydrogen' ? 3000 : 400;
+    els.tank.max = storageType.key === 'hydrogen' ? 10 : 15;
+    els.tank.value = storageType.key === 'hydrogen' ? 1 : 3;
+    lastStorageKey = storageType.key;
+  }
+
   const area = parseFloat(els.area.value);
   const tank = parseFloat(els.tank.value);
   const need = parseFloat(els.need.value);
@@ -237,40 +316,52 @@ function render() {
   const hcost = parseFloat(els.hcost.value);
   const useStress = els.scenario.value === '1';
 
+  document.getElementById('v-storage-type').textContent = storageType.label;
+  document.getElementById('tank-label').textContent = storageType.key === 'hydrogen' ? 'Tank capacity' : 'Battery capacity';
+  document.getElementById('hcost-label').textContent = storageType.costLabel;
+  document.getElementById('chart-heading').textContent = storageType.key === 'hydrogen'
+    ? 'Tank Level Over the Winter'
+    : 'Battery Charge Over the Winter';
   document.getElementById('v-area').textContent = `${fmt(area,1)} m²`;
-  document.getElementById('v-tank').textContent = `${fmt(tank,1)} kg`;
+  document.getElementById('v-tank').textContent = `${fmt(tank,1)} ${storageType.unit}`;
   document.getElementById('v-need').textContent = `${fmt(need,1)} kWh`;
   document.getElementById('v-pcost').textContent = `$${pcost}/m²`;
-  document.getElementById('v-hcost').textContent = `$${hcost.toLocaleString()}/kg H₂`;
+  document.getElementById('v-hcost').textContent = `$${hcost.toLocaleString()}${storageType.costUnit}`;
   document.getElementById('v-scenario').textContent = useStress ? 'Stress-tested (+8-day storm)' : 'Real historical data';
 
   const data = useStress ? STRESSED_WINTER : REAL_WINTER;
-  const result = simulate(data, area, need, tank);
+  const result = simulate(data, area, need, tank, storageType);
   const cost = area * pcost + tank * hcost;
 
   const dot = document.getElementById('status-dot');
   const headline = document.getElementById('status-headline');
   const sub = document.getElementById('status-sub');
 
+  const derateNote = storageType.coldDerate < 1
+    ? ` (nameplate ${fmt(tank,1)} kWh, only ${fmt(tank*storageType.coldDerate,1)} kWh usable in cold)`
+    : '';
+
   if (result.survived) {
     dot.style.background = 'var(--teal)';
     dot.style.boxShadow = '0 0 16px 2px rgba(53,214,169,0.5)';
     headline.textContent = 'Survives the full winter';
-    sub.textContent = useStress
+    sub.textContent = (useStress
       ? 'Held up through the real record and the added 8-day storm.'
-      : 'Held up through all 90 real recorded days.';
+      : 'Held up through all 90 real recorded days.') + derateNote;
   } else {
     dot.style.background = 'var(--coral)';
     dot.style.boxShadow = '0 0 16px 2px rgba(232,101,75,0.5)';
     headline.textContent = `Fails on day ${result.failDay + 1}`;
-    sub.textContent = 'Tank ran dry before the deficit was covered — try more panel area or tank capacity.';
+    sub.textContent = 'Ran out of stored energy before the deficit was covered — try more panel area or capacity.' + derateNote;
   }
 
   document.getElementById('stat-cost').textContent = `$${cost.toLocaleString(undefined,{maximumFractionDigits:0})}`;
   document.getElementById('stat-waste').textContent = fmt(result.wastedKWh, 1);
-  document.getElementById('stat-min').textContent = `${fmt(Math.min(...result.trace), 2)} kg`;
+  document.getElementById('stat-min-label').textContent = storageType.key === 'hydrogen' ? 'Min tank level' : 'Min battery charge';
+  document.getElementById('stat-min').textContent = `${fmt(Math.min(...result.trace), 2)} ${storageType.unit}`;
 
-  drawChart(result.trace, tank, result.failDay);
+  const chartCap = storageType.key === 'hydrogen' ? tank : tank * storageType.coldDerate;
+  drawChart(result.trace, chartCap, result.failDay);
 }
 
 function drawChart(trace, tankMax, failDay) {
