@@ -145,6 +145,14 @@ need its own historical solar data run back through the same pipeline.
   energy-balance question this simulation answers.
 - Fuel-cell waste heat (~45% of energy content) is documented as a cogeneration/space-heating
   bonus, not separately modeled, since the project's core deliverable is electricity.
+- **Metal-hydride desorption rate not modeled:** cold doesn't reduce a hydride tank's total
+  storage *capacity* the way it does a battery's — a kg of stored H₂ stays a kg regardless of
+  temperature. But releasing it is temperature-sensitive: real LaNi5 hydride studies show
+  desorption rate increasing significantly with temperature (~1.5x faster at 50°C vs 25°C),
+  so cold can slow down *how fast* hydrogen comes out, even when the total amount stored is
+  unaffected — a rate limitation, not a capacity one, and the opposite failure mode from
+  batteries. Real systems typically mitigate this with fuel-cell waste-heat recovery to warm
+  the tank. This daily-total simulation doesn't capture rate-limited scenarios (see above).
 
 </details>
 

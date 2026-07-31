@@ -151,6 +151,10 @@
         <div class="slider-label"><span>Scenario</span><span class="slider-value" id="v-scenario">Stress-tested</span></div>
         <input type="range" id="scenario" min="0" max="1" value="1" step="1">
       </div>
+      <div class="slider-row">
+        <div class="slider-label"><span>Panel temperature effect</span><span class="slider-value" id="v-tempfx">On (real data)</span></div>
+        <input type="range" id="tempfx" min="0" max="1" value="1" step="1">
+      </div>
     </div>
 
     <div class="card status-panel">
@@ -188,12 +192,29 @@
 <script>
 const REAL_WINTER = [3.8604,3.8755,3.7747,3.6810,3.5895,0.4006,0.5063,0.2900,3.2452,3.7860,2.1708,3.2626,3.6982,1.6637,3.6299,2.8693,3.7480,2.2650,1.9375,0.5979,0.3990,0.3686,0.3682,0.5766,3.6274,3.7146,3.7994,1.6362,3.7823,3.6640,1.1999,0.4501,2.0316,3.6229,3.6440,3.1382,2.8103,3.7314,3.6532,1.8172,2.9946,3.3300,1.0800,1.3486,2.3684,3.3879,3.8100,3.9200,1.3477,2.5533,3.7093,3.7827,1.4709,3.8212,2.5740,2.4153,4.7591,4.8055,4.2929,5.0163,4.9324,3.1560,5.0794,5.0625,4.9034,2.1487,4.4567,2.4770,5.4698,5.5789,0.7943,4.5988,1.1180,2.4973,3.4376,5.1491,5.7643,5.7414,5.6617,1.4841,1.6820,5.6867,5.2608,5.7603,5.8202,5.9690,6.0586,2.8969,5.1635,5.8811];
 
+// Real daily-average air temperature (°C) for the same 90 days, from the same PVGIS
+// hourly dataset (T2m column) -- genuinely cold, averaging -6.3°C, dipping to -13.6°C
+const REAL_TEMPS = [-7.66,-6.89,-4.23,-1.65,-1.55,-5.35,-10.33,-11.19,-9.79,-9.22,-9.22,-6.00,-4.32,-3.95,-4.00,-6.28,-4.85,-3.94,-3.94,-3.86,-2.21,-3.31,-3.13,-5.28,-9.64,-8.07,-5.59,-1.48,-2.87,-1.99,-2.34,-4.06,-6.53,-7.05,-6.34,-5.74,-5.97,-5.66,-7.50,-9.05,-12.99,-9.58,-6.15,-6.98,-8.97,-11.51,-11.68,-12.42,-9.57,-4.00,-5.54,-6.05,-4.66,-5.65,-6.59,-7.85,-8.08,-8.15,-9.29,-12.22,-11.41,-10.18,-13.61,-9.98,-5.95,-4.32,-1.73,-4.36,-5.60,-6.21,-5.54,-5.64,-5.81,-3.69,-5.93,-6.57,-7.23,-6.75,-4.98,-4.66,-5.43,-5.94,-5.07,-4.98,-5.28,-4.77,-5.21,-4.83,-5.09,-3.72];
+
 // Stressed version: extend the real Dec 20-24 storm (indices 19-23) into an 8-day
 // storm (indices 19-26) at the same severity as the worst real day.
 const STRESSED_WINTER = REAL_WINTER.slice();
 for (let i = 19; i <= 26; i++) STRESSED_WINTER[i] = 0.40;
 
 const ETA_SOLAR = 0.20, ETA_ELEC = 0.75, ETA_FC = 0.55, H2_ENERGY = 39.7;
+
+// Real crystalline-silicon panel temperature coefficient: efficiency changes roughly
+// -0.4%/°C relative to the 25°C standard test condition -- meaning panels get MORE
+// efficient in cold (a real, well-documented effect), up to a point. Panel cell temp is
+// modeled as roughly air temp + 20°C (typical rise above ambient under sunlight), and the
+// resulting factor is clamped to a plausible range so extreme cold doesn't overstate gains.
+const TEMP_COEFF = -0.004; // per °C, relative to 25°C reference (negative = colder is better)
+function tempAdjustedEfficiency(airTempC) {
+  const cellTemp = airTempC + 20;
+  const delta = cellTemp - 25;
+  const factor = 1 + TEMP_COEFF * delta; // TEMP_COEFF already negative, so cold (negative delta) -> factor > 1
+  return ETA_SOLAR * Math.max(0.85, Math.min(1.15, factor));
+}
 
 // Storage type definitions. Hydrogen stores kg of H2 (converted via electrolyzer/fuel
 // cell, each with real conversion losses). Batteries store kWh directly, but real-world
@@ -206,7 +227,7 @@ const STORAGE_TYPES = [
   { key: 'lifepo4',  label: 'LiFePO4 battery',          unit: 'kWh', costLabel: 'LiFePO4 cost', costUnit: '$/kWh', defaultCost: 180, coldDerate: 0.60 },
 ];
 
-function solarEnergy(irr, area) { return irr * area * ETA_SOLAR; }
+function solarEnergy(irr, area, effEta) { return irr * area * effEta; }
 function hydrogenMass(Q) { return (Q * ETA_ELEC) / H2_ENERGY; }
 function energyFromFC(m) { return m * H2_ENERGY * ETA_FC; }
 function massForDeficit(Q) { return Q / (H2_ENERGY * ETA_FC); }
@@ -219,12 +240,13 @@ function updLevel(cur, amt, max) {
 
 // Hydrogen path: same as before -- surplus goes through electrolyzer (real conversion
 // loss), deficit is covered via fuel cell (another real conversion loss).
-function simulateHydrogen(data, area, need, tankMax) {
+function simulateHydrogen(data, temps, area, need, tankMax, useTempEffect) {
   let level = tankMax; // starts full -- summer surplus has already topped it off before winter begins
   let wasted = 0, failDay = -1;
   const trace = [level];
   for (let i = 0; i < data.length; i++) {
-    const E = solarEnergy(data[i], area);
+    const eta = useTempEffect ? tempAdjustedEfficiency(temps[i]) : ETA_SOLAR;
+    const E = solarEnergy(data[i], area, eta);
     if (E > need) {
       const surplus = E - need;
       const m = hydrogenMass(surplus);
@@ -250,13 +272,14 @@ function simulateHydrogen(data, area, need, tankMax) {
 // The nameplate capacity is reduced by a cold-derating factor to represent real usable
 // capacity in sub-zero conditions (batteries don't get an electrolyzer/fuel-cell loss,
 // but they do lose real capacity to cold that hydrogen storage doesn't).
-function simulateBattery(data, area, need, capacityKWh, coldDerate) {
+function simulateBattery(data, temps, area, need, capacityKWh, coldDerate, useTempEffect) {
   const effectiveCap = capacityKWh * coldDerate;
   let level = effectiveCap; // starts full, same summer-fill assumption as hydrogen
   let wasted = 0, failDay = -1;
   const trace = [level];
   for (let i = 0; i < data.length; i++) {
-    const E = solarEnergy(data[i], area);
+    const eta = useTempEffect ? tempAdjustedEfficiency(temps[i]) : ETA_SOLAR;
+    const E = solarEnergy(data[i], area, eta);
     if (E > need) {
       const surplus = E - need;
       const before = level;
@@ -277,18 +300,18 @@ function simulateBattery(data, area, need, capacityKWh, coldDerate) {
   return { trace, wasted, wastedKWh: wasted, failDay, survived: failDay < 0, effectiveCap };
 }
 
-function simulate(data, area, need, capacity, storageType) {
+function simulate(data, temps, area, need, capacity, storageType, useTempEffect) {
   if (storageType.key === 'hydrogen') {
-    return simulateHydrogen(data, area, need, capacity);
+    return simulateHydrogen(data, temps, area, need, capacity, useTempEffect);
   }
-  return simulateBattery(data, area, need, capacity, storageType.coldDerate);
+  return simulateBattery(data, temps, area, need, capacity, storageType.coldDerate, useTempEffect);
 }
 
 const els = {
   area: document.getElementById('area'), tank: document.getElementById('tank'),
   need: document.getElementById('need'), pcost: document.getElementById('pcost'),
   hcost: document.getElementById('hcost'), scenario: document.getElementById('scenario'),
-  storageType: document.getElementById('storage-type'),
+  storageType: document.getElementById('storage-type'), tempfx: document.getElementById('tempfx'),
 };
 
 let lastStorageKey = 'hydrogen';
@@ -315,6 +338,7 @@ function render() {
   const pcost = parseFloat(els.pcost.value);
   const hcost = parseFloat(els.hcost.value);
   const useStress = els.scenario.value === '1';
+  const useTempEffect = els.tempfx.value === '1';
 
   document.getElementById('v-storage-type').textContent = storageType.label;
   document.getElementById('tank-label').textContent = storageType.key === 'hydrogen' ? 'Tank capacity' : 'Battery capacity';
@@ -328,9 +352,10 @@ function render() {
   document.getElementById('v-pcost').textContent = `$${pcost}/m²`;
   document.getElementById('v-hcost').textContent = `$${hcost.toLocaleString()}${storageType.costUnit}`;
   document.getElementById('v-scenario').textContent = useStress ? 'Stress-tested (+8-day storm)' : 'Real historical data';
+  document.getElementById('v-tempfx').textContent = useTempEffect ? 'On (real -6.3°C avg data)' : 'Off (flat 20% efficiency)';
 
   const data = useStress ? STRESSED_WINTER : REAL_WINTER;
-  const result = simulate(data, area, need, tank, storageType);
+  const result = simulate(data, REAL_TEMPS, area, need, tank, storageType, useTempEffect);
   const cost = area * pcost + tank * hcost;
 
   const dot = document.getElementById('status-dot');
