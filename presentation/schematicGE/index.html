@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HydroGrid — სისტემის სქემა</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#070b12;
+    --panel:#0d1626;
+    --panel-2:#101b30;
+    --line-dim:#1c2a42;
+    --solar:#ffc65c;
+    --power:#5b8cff;
+    --hydrogen:#3fe8c8;
+    --water:#7fd8ff;
+    --heat:#ff7a4d;
+    --ghost:#66748c;
+    --ink:#e7edf7;
+    --mist:#9fb0c9;
+    --faint:#5c6c85;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 12% -10%, rgba(91,140,255,0.10), transparent 60%),
+      radial-gradient(ellipse 900px 600px at 90% 10%, rgba(63,232,200,0.08), transparent 55%),
+      var(--void);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+
+  /* ---------- header ---------- */
+  header{
+    padding:38px 28px 18px;
+    max-width:1180px;
+    margin:0 auto;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:.18em;
+    color:var(--hydrogen);
+    text-transform:uppercase;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:7px;height:7px;border-radius:50%;
+    background:var(--hydrogen);
+    box-shadow:0 0 8px 2px rgba(63,232,200,.7);
+  }
+  h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:clamp(28px,4vw,42px);
+    margin:10px 0 8px;
+    letter-spacing:-0.01em;
+  }
+  h1 span{color:var(--faint); font-weight:600;}
+  .sub{
+    color:var(--mist);
+    font-size:15px;
+    max-width:620px;
+    line-height:1.55;
+    margin:0 0 6px;
+  }
+  .hint{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    color:var(--faint);
+    margin-top:14px;
+    display:flex;
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .hint kbd{
+    background:var(--panel);
+    border:1px solid var(--line-dim);
+    padding:2px 7px;
+    border-radius:5px;
+    color:var(--mist);
+    font-size:10.5px;
+  }
+
+  /* ---------- diagram wrapper ---------- */
+  .stage{
+    max-width:1180px;
+    margin:10px auto 0;
+    padding:0 0 6px;
+  }
+  .canvas-wrap{
+    position:relative;
+    overflow-x:auto;
+    overflow-y:hidden;
+    border-top:1px solid var(--line-dim);
+    border-bottom:1px solid var(--line-dim);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.015), transparent 8%),
+      repeating-linear-gradient(0deg, transparent 0 39px, rgba(255,255,255,0.014) 39px 40px),
+      repeating-linear-gradient(90deg, transparent 0 39px, rgba(255,255,255,0.014) 39px 40px);
+    -webkit-overflow-scrolling:touch;
+  }
+  .canvas-wrap::-webkit-scrollbar{height:9px;}
+  .canvas-wrap::-webkit-scrollbar-track{background:var(--void);}
+  .canvas-wrap::-webkit-scrollbar-thumb{background:var(--line-dim); border-radius:6px;}
+
+  svg#diagram{
+    display:block;
+    width:100%;
+    min-width:980px;
+    height:auto;
+  }
+
+  .lane-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    letter-spacing:.12em;
+    fill:var(--faint);
+    text-transform:uppercase;
+  }
+  .lane-rule{
+    stroke:var(--line-dim);
+    stroke-width:1;
+    stroke-dasharray:2 5;
+  }
+
+  /* node base */
+  .node-shape{
+    fill:var(--panel);
+    stroke-width:1.6;
+    transition:filter .15s ease, stroke-width .15s ease, fill .15s ease;
+  }
+  .node-group{cursor:pointer;}
+  .node-group:hover .node-shape, .node-group.pinned .node-shape{
+    stroke-width:2.4;
+    fill:var(--panel-2);
+  }
+  .node-label{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    fill:var(--ink);
+    text-anchor:middle;
+    dominant-baseline:middle;
+  }
+  .node-tag{
+    font-family:'IBM Plex Mono',monospace;
+    fill:var(--faint);
+    text-anchor:middle;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+  }
+  .node-group.support .node-label{font-size:13.5px;}
+  .node-group.support .node-tag{font-size:8.6px;}
+  .node-group.primary .node-label{font-size:16.5px;}
+  .node-group.primary .node-tag{font-size:9.2px;}
+  .node-group.ghost .node-shape{stroke-dasharray:4 4; fill:rgba(13,22,38,.55);}
+  .node-group.ghost .node-label{fill:var(--mist); font-weight:500;}
+  .node-group.end .node-label{font-size:15px;}
+
+  .badge{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:13px;
+  }
+  .badge-circle{fill:var(--void); stroke-width:1.6;}
+
+  .start-ray{stroke:var(--solar); stroke-width:2; opacity:.75;}
+  .start-core{fill:var(--void); stroke:var(--solar); stroke-width:2.2;}
+  .start-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    letter-spacing:.1em;
+    fill:var(--solar);
+    text-anchor:middle;
+  }
+
+  /* edges */
+  .edge-hit{fill:none; stroke:transparent; stroke-width:18; cursor:pointer;}
+  .edge-line{fill:none; stroke-linecap:round; transition:stroke-width .15s ease, filter .15s ease;}
+  .edge-line.primary{stroke-width:3;}
+  .edge-line.secondary{stroke-width:1.8;}
+  .edge-line.dashed{stroke-dasharray:1 9;}
+  .edge-line.solidflow{stroke-dasharray:1 9;}
+  .edge-group:hover .edge-line, .edge-group.pinned .edge-line{stroke-width:4; filter:brightness(1.35);}
+
+  @keyframes flow{
+    to{ stroke-dashoffset:-200; }
+  }
+  .edge-line{ animation:flow 6s linear infinite; }
+  .edge-line.slow{ animation-duration:11s; }
+  .edge-line.fast{ animation-duration:3.4s; }
+
+  .edge-label-bg{fill:var(--void); opacity:.001;}
+  .edge-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9.6px;
+    fill:var(--faint);
+    text-anchor:middle;
+    letter-spacing:.02em;
+    pointer-events:none;
+  }
+
+  /* tooltip */
+  #tooltip{
+    position:fixed;
+    max-width:280px;
+    background:linear-gradient(180deg, #101c30, #0b1523);
+    border:1px solid var(--line-dim);
+    border-radius:10px;
+    padding:12px 14px;
+    font-size:12.8px;
+    line-height:1.5;
+    color:var(--mist);
+    pointer-events:none;
+    opacity:0;
+    transform:translateY(4px);
+    transition:opacity .12s ease, transform .12s ease;
+    z-index:50;
+    box-shadow:0 14px 40px rgba(0,0,0,.55);
+  }
+  #tooltip.show{opacity:1; transform:translateY(0);}
+  #tooltip .tt-tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9.5px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    margin-bottom:5px;
+    display:block;
+  }
+  #tooltip .tt-title{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:14.5px;
+    color:var(--ink);
+    margin-bottom:5px;
+    display:block;
+  }
+
+  /* legend */
+  .legend-wrap{
+    max-width:1180px;
+    margin:26px auto 60px;
+    padding:0 28px;
+    display:grid;
+    grid-template-columns:1.05fr 1fr;
+    gap:16px;
+  }
+  @media (max-width:760px){ .legend-wrap{grid-template-columns:1fr;} }
+  .legend-card{
+    background:var(--panel);
+    border:1px solid var(--line-dim);
+    border-radius:12px;
+    padding:16px 18px;
+  }
+  .legend-title{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--faint);
+    margin:0 0 12px;
+  }
+  .legend-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:6px 0;
+    font-size:13px;
+    color:var(--mist);
+  }
+  .legend-row b{color:var(--ink); font-weight:500;}
+  .swatch-line{width:26px; height:2px; flex:none; border-radius:2px;}
+  .swatch-line.dashed{
+    background:none;
+    border-top-width:2px;
+    border-top-style:dashed;
+    height:0;
+  }
+  .swatch-box{
+    width:20px; height:14px; border-radius:4px; flex:none;
+    border-width:1.6px; border-style:solid;
+  }
+  .swatch-box.dash{border-style:dashed; background:rgba(255,255,255,.02);}
+  .swatch-num{
+    width:20px;height:20px;border-radius:6px;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;
+    background:rgba(63,232,200,.08); border:1.6px solid var(--hydrogen); color:var(--hydrogen);
+  }
+
+  footer{
+    text-align:center;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    color:var(--faint);
+    padding:0 0 40px;
+    letter-spacing:.04em;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .edge-line{animation:none;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">HydroGrid · დახურული ციკლის ენერგიის შენახვის სისტემა</div>
+  <h1>სისტემის სქემა <span>— როგორ მუშაობს ციკლი სინამდვილეში</span></h1>
+  <p class="sub">ზაფხულის მზის ენერგიის სიჭარბე გარდაიქმნება წყალბადად; ზამთარში ეს წყალბადი ისევ ელექტროენერგიად და სითბოდ იქცევა. სუფთა წყალი ერთადერთი თანაპროდუქტია და ის ზუსტად იქ ბრუნდება, საიდანაც დაიწყო.</p>
+  <div class="hint">დეტალებისთვის გადაატარეთ მაუსი ან დააკლიკეთ ნებისმიერ ბლოკს ან შემაერთებელს &nbsp;·&nbsp; <kbd>1–4</kbd> მსხვილად გაფერადებული დანომრილი ბლოკები + დაბრუნების ისარი წარმოადგენს ხუთსაფეხურიან ძირითად ციკლს &nbsp;·&nbsp; ყველაფერი დანარჩენი დამხმარე ქვესისტემაა</div>
+</header>
+
+<div class="stage">
+  <div class="canvas-wrap" id="canvasWrap">
+    <svg id="diagram" viewBox="0 0 1820 1100" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<div class="legend-wrap">
+  <div class="legend-card">
+    <p class="legend-title">ნაკადის ხაზები — რა მოძრაობს</p>
+    <div class="legend-row"><span class="swatch-line" style="background:var(--solar)"></span><b>მზის სინათლე</b>&nbsp;— საწყისი მზის ენერგია</div>
+    <div class="legend-row"><span class="swatch-line" style="background:var(--power)"></span><b>ელექტროენერგია (DC)</b>&nbsp;— ენერგიის განაწილება</div>
+    <div class="legend-row"><span class="swatch-line" style="background:var(--hydrogen)"></span><b>წყალბადის გაზი</b>&nbsp;— გამომუშავება, შენახვა, გამოყოფა</div>
+    <div class="legend-row"><span class="swatch-line" style="background:var(--water)"></span><b>წყალი / კონდენსატი</b>&nbsp;— ციკლის დამხურავი უკუქცევის გზა</div>
+    <div class="legend-row"><span class="swatch-line" style="background:var(--heat)"></span><b>ნარჩენი სითბო</b>&nbsp;— საწვავის ელემენტის კოგენერაცია</div>
+    <div class="legend-row"><span class="swatch-line dashed" style="border-color:var(--ghost)"></span><b>სიგნალი / ვენტილაცია</b>&nbsp;— სენსორები, უსაფრთხოება, O₂ თანაპროდუქტი</div>
+  </div>
+  <div class="legend-card">
+    <p class="legend-title">ბლოკები — რას წარმოადგენენ</p>
+    <div class="legend-row"><span class="swatch-num">3</span><b>ძირითადი ციკლის ეტაპი</b>&nbsp;— ხუთი აუცილებელი ნაბიჯი, თანმიმდევრობით</div>
+    <div class="legend-row"><span class="swatch-box" style="border-color:var(--power)"></span><b>დამხმარე ქვესისტემა</b>&nbsp;— უზრუნველყოფს ძირითადი ეტაპის მუშაობას</div>
+    <div class="legend-row"><span class="swatch-box dash" style="border-color:var(--ghost)"></span><b>უსაფრთხოება / ინსტრუმენტები</b>&nbsp;— მონიტორინგი და ვენტილაცია</div>
+    <div class="legend-row"><span class="swatch-box" style="border-color:var(--solar); border-radius:20px;"></span><b>ენერგიის წყარო</b>&nbsp;— საიდანაც იწყება სისტემა</div>
+    <div class="legend-row"><span class="swatch-box" style="border-color:var(--ink); box-shadow:0 0 8px rgba(231,237,247,.4);"></span><b>ობიექტის მიწოდება</b>&nbsp;— სადაც სისტემა სრულდება</div>
+  </div>
+</div>
+
+<footer>HYDROGRID — მწვანე წყალბადის სეზონური საცავი ქსელიდან გათიშული ალპური ობიექტებისთვის</footer>
+
+<script>
+(function(){
+
+  const nodes = {
+    sun: { shape:'circle', cx:90, cy:210, r:38, color:'solar', tier:'start',
+      tag:'ენერგიის წყარო', label:'მზე', title:'მზის სინათლე',
+      desc:'მზის რადიაცია, რომელიც ეცემა პანელებს, სიმაღლის შესწორებით 2715 მ საცნობარო ადგილისთვის. ერთადერთი გარე რესურსი, რაც მთლიან ციკლს სჭირდება.' },
+    pv:  { shape:'rect', cx:300, cy:210, w:190, h:78, color:'power', tier:'support',
+      tag:'მზის ენერგია & გარდაქმნა', label:'მზის პანელები', title:'მზის პანელები (PV Array)',
+      desc:'პანელების ფართობი გათვლილია PVGIS‑SARAH3-ის 5 წლიანი რეალური საათობრივი მზის მონაცემების საფუძველზე — სინთეტიკური ამინდის გარეშე. სავარაუდო ეფექტურობა ~20%.' },
+    cc:  { shape:'rect', cx:580, cy:210, w:190, h:78, color:'power', tier:'support',
+      tag:'მზის ენერგია & გარდაქმნა', label:'მუხტის კონტროლერი', title:'მუხტის კონტროლერი',
+      desc:'MPPT მუხტის კონტროლერი არეგულირებს ძაბვას პანელებსა და ბუფერულ ელემენტს შორის და ანაწილებს ჭარბ ენერგიას ელექტროლიზისკენ.' },
+    bb:  { shape:'rect', cx:860, cy:210, w:190, h:78, color:'power', tier:'support',
+      tag:'მზის ენერგია & გარდაქმნა', label:'ბუფერული ელემენტი', title:'ბუფერული ელემენტი',
+      desc:'უზრუნველყოფს მხოლოდ წამობრივ დასტაბილურებას. შთანთქავს მყისიერ ცვლილებებს გამომუშავებასა და მოხმარებას შორის — ეს არ არის სეზონური საცავი; ეს ამოცანა მთლიანად წყალბადის ავზს ეკისრება.' },
+    wr:  { shape:'rect', cx:280, cy:520, w:210, h:96, color:'hydrogen', tier:'primary', badge:1,
+      tag:'ძირითადი ციკლი · ეტაპი 1', label:'წყლის რეზერვუარი', title:'წყლის რეზერვუარი',
+      desc:'დახურული ციკლის საწყისი და საბოლოო წერტილი. ასუფთავებს შემომავალ წყალს და ინახავს კონდენსატს, რომელსაც საწვავის ელემენტი აბრუნებს ყოველ ზამთარს.' },
+    el:  { shape:'rect', cx:600, cy:520, w:210, h:96, color:'hydrogen', tier:'primary', badge:2,
+      tag:'ძირითადი ციკლი · ეტაპი 2', label:'PEM ელექტროლიზერი', title:'PEM ელექტროლიზერი',
+      desc:'შლის რეზერვუარის წყალს H₂ და O₂-ად ზაფხულის ჭარბი მზის ენერგიის გამოყენებით. მორგებულია ობიექტის პიკურ ჭარბ სიმძლავრეზე; სიმულაციაში ეფექტურობა ~75%.' },
+    o2:  { shape:'rect', cx:600, cy:686, w:170, h:64, color:'ghost', tier:'ghost',
+      tag:'თანაპროდუქტი', label:'O₂ სავენტილაციო', title:'O₂-ის გამოყოფა',
+      desc:'ჟანგბადის თანაპროდუქტი უსაფრთხოდ გამოიყოფა ატმოსფეროში. არანაირი შენახვა ან შემდგომი გამოყენება — ჩიხური განშტოება დიზაინის მიხედვით.' },
+    h2d: { shape:'rect', cx:870, cy:520, w:170, h:72, color:'hydrogen', tier:'support',
+      tag:'წყალბადის გამომუშავება', label:'H₂ საშრობი', title:'H₂ საშრობი',
+      desc:'აშორებს ტენიანობას წყალბადის ნაკადს საცავში მოხვედრამდე, რითაც იცავს მეტალ-ჰიდრიდის შენადნობს.' },
+    tank:{ shape:'rect', cx:1150, cy:520, w:230, h:104, color:'hydrogen', tier:'primary', badge:3,
+      tag:'ძირითადი ციკლი · ეტაპი 3', label:'მეტალ-ჰიდრიდის ავზი', title:'მეტალ-ჰიდრიდის ავზი',
+      desc:'აკავშირებს წყალბადს მყარ შენადნობში 30 ბარზე დაბალი წნევის ქვეშ. შენახული კილოგრამი რჩება კილოგრამად, მიუხედავად გარე ტემპერატურისა — ელემენტისგან განსხვავებით, სიცივე არ ამცირებს მის ტევადობას. გამოყოფის სიჩქარე (და არა ტევადობა) მგრძნობიარეა სიცივის მიმართ, რასაც გათბობის კოჭა აკომპენსირებს.' },
+    relief:{ shape:'rect', cx:1040, cy:686, w:170, h:62, color:'ghost', tier:'ghost',
+      tag:'უსაფრთხოება', label:'დამცავი სარქველი', title:'წნევის დამცავი სარქველი',
+      desc:'ავტომატურად ამცირებს წნევას ავზში, თუ შიდა წნევა დასაშვებ ზღვარს გადააჭარბებს.' },
+    sensors:{ shape:'rect', cx:1260, cy:686, w:170, h:62, color:'ghost', tier:'ghost',
+      tag:'ინსტრუმენტები', label:'დონის/წნევის სენსორი', title:'დონის + წნევის სენსორები',
+      desc:'ავზის უწყვეტი ტელემეტრია გადაეცემა მართვის დონეს, რათა სისტემამ ყოველთვის ზუსტად იცოდეს, თუ რამდენი წყალბადია ხელმისაწვდომი.' },
+    ab:  { shape:'rect', cx:870, cy:868, w:180, h:76, color:'hydrogen', tier:'support',
+      tag:'ენერგიის გენერაცია', label:'ჰაერის საბერველი', title:'ჰაერის საბერველი',
+      desc:'აწვდის გარემოს ჟანგბადს, რომელიც საწვავის ელემენტს სჭირდება ზამთარში შენახულ წყალბადთან რეაქციისთვის.' },
+    fc:  { shape:'rect', cx:1150, cy:868, w:220, h:100, color:'hydrogen', tier:'primary', badge:4,
+      tag:'ძირითადი ციკლი · ეტაპი 4', label:'PEM საწვავის ელემენტი', title:'PEM საწვავის ელემენტი',
+      desc:'აკავშირებს შენახულ H₂-ს გარემოს O₂-თან. გამოყოფილი ენერგიის დაახლოებით 55% გარდაიქმნება ელექტროენერგიად; დარჩენილი ~45% ხდება გამოსაყენებელი სითბო ნაცვლად იმისა, რომ დაიკარგოს.' },
+    hs:  { shape:'rect', cx:1440, cy:868, w:200, h:86, color:'heat', tier:'support',
+      tag:'ენერგიის გენერაცია & სითბო', label:'სითბოს სპლიტერი', title:'სითბოს აღმდგენი სპლიტერი',
+      desc:'ანაწილებს საწვავის ელემენტის ნარჩენ სითბოს ორად: უკან, ავზის გასათბობ კოჭაში, და შენობის გასათბობად — კოგენერაციის ბონუსი ელექტროენერგიის დამატებით.' },
+    inv: { shape:'rect', cx:1690, cy:580, w:210, h:92, color:'power', tier:'support',
+      tag:'მზის ენერგია & გარდაქმნა', label:'ინვერტორი/DC სალტე', title:'ინვერტორი / DC სალტე',
+      desc:'საზიარო მუდმივი დენის (DC) სალტე და ინვერტორი როგორც მზის, ისე საწვავის ელემენტისგან მიღებული ენერგიისთვის, რომელიც მას ობიექტისთვის გამოსაყენებელ ელექტროენერგიად გარდაქმნის.' },
+    cl:  { shape:'rect', cx:1690, cy:868, w:200, h:84, color:'power', tier:'end',
+      tag:'ობიექტის მიწოდება', label:'შენობის დატვირთვა', title:'კაბინის დატვირთვა',
+      desc:'ელექტრული გზის დასასრული. უზრუნველყოფს ობიექტის აღჭურვილობისა და განათების კვებას.' },
+    ch:  { shape:'rect', cx:1440, cy:1024, w:200, h:76, color:'heat', tier:'end',
+      tag:'ობიექტის მიწოდება', label:'შენობის გათბობა', title:'კაბინის გათბობა',
+      desc:'სითბოს გზის დასასრული. საწვავის ელემენტის ნარჩენი სითბო პირდაპირ ათბობს კაბინას — უფასო გათბობა, რომელსაც მხოლოდ ელემენტზე მომუშავე სისტემა ვერასოდეს გამოიმუშავებს.' },
+  };
+
+  const edges = [
+    { from:'sun', fs:'right', to:'pv', ts:'left', color:'solar', weight:'secondary', label:'მზის სინათლე', bend:60,
+      desc:'საწყისი მზის რადიაცია, რომელიც აღწევს პანელებამდე.' },
+    { from:'pv', fs:'right', to:'cc', ts:'left', color:'power', weight:'secondary', label:'საწყისი DC', bend:70,
+      desc:'დაურეგულირებელი მუდმივი დენი (DC) პანელებიდან, რომელიც მიდის ძაბვის რეგულაციისკენ.' },
+    { from:'cc', fs:'right', to:'bb', ts:'left', color:'power', weight:'secondary', label:'დარეგულირებული DC', bend:70,
+      desc:'დარეგულირებული DC მუხტავს ბუფერულ ელემენტს.' },
+    { from:'bb', fs:'bottom', to:'el', ts:'top', color:'power', weight:'secondary', dashed:true, label:'ჭარბი DC', bend:90,
+      desc:'მზის ენერგია, რომელიც აღემატება ელემენტისა და კაბინის საჭიროებებს, მიმართულია ელექტროლიზისკენ დაკარგვის ნაცვლად.' },
+    { from:'bb', fs:'right', to:'inv', ts:'top', color:'power', weight:'secondary', label:'ელემენტი/მზის DC', bend:140,
+      desc:'ელემენტისა და მზის DC კვებავს საზიარო ინვერტორს/სალტეს კაბინაში დაუყოვნებლივი გამოყენებისთვის.' },
+    { from:'wr', fs:'right', to:'el', ts:'left', color:'water', weight:'primary', label:'გასუფთავებული წყალი', bend:60,
+      desc:'გასუფთავებული წყალი წარმოადგენს ელექტროლიზერის ნედლეულს.' },
+    { from:'el', fs:'bottom', to:'o2', ts:'top', color:'ghost', weight:'secondary', dashed:true, label:'O₂-ის გამოყოფა', bend:60,
+      desc:'ჟანგბადი არის წყლის დაშლის უსაფრთხო, გამოუყენებელი თანაპროდუქტი.' },
+    { from:'el', fs:'right', to:'h2d', ts:'left', color:'hydrogen', weight:'primary', label:'H₂ (სველი)', bend:60,
+      desc:'წყალბადი ტოვებს ელექტროლიზერს ტენიანობასთან ერთად.' },
+    { from:'h2d', fs:'right', to:'tank', ts:'left', color:'hydrogen', weight:'primary', label:'H₂ (მშრალი)', bend:70,
+      desc:'გამომშრალი წყალბადი შედის საცავში — ზაფხულის დამუხტვის გზის ბოლო ნაბიჯი.' },
+    { from:'tank', fs:'bottom', to:'relief', ts:'top', color:'ghost', weight:'secondary', dashed:true, label:'', bend:50,
+      desc:'წნევის უწყვეტი მონიტორინგი უსაფრთხოებისთვის.' },
+    { from:'tank', fs:'bottom', to:'sensors', ts:'top', color:'ghost', weight:'secondary', dashed:true, label:'', bend:50,
+      desc:'დონისა და წნევის უწყვეტი ტელემეტრია.' },
+    { from:'tank', fs:'bottom', to:'fc', ts:'top', color:'hydrogen', weight:'primary', label:'H₂ გამოყოფა', bend:90,
+      desc:'ზამთრის განმუხტვის გზის დასაწყისი.' },
+    { from:'ab', fs:'right', to:'fc', ts:'left', color:'hydrogen', weight:'secondary', label:'გარემოს O₂', bend:60,
+      desc:'გარემოს ჟანგბადი კვებავს რეკომბინაციის რეაქციას.' },
+    { from:'fc', fs:'right', to:'inv', ts:'bottom', color:'power', weight:'secondary', label:'DC გამომავალი', bend:150,
+      desc:'საწვავის ელემენტის რეაქციის ელექტრული გამომავალი.' },
+    { from:'fc', fs:'right', to:'hs', ts:'left', color:'heat', weight:'primary', label:'ნარჩენი სითბო ~45%', bend:70,
+      desc:'ნარჩენი სითბო — რეაქციის ენერგიის დაახლოებით 45%.' },
+    { from:'hs', fs:'top', to:'tank', ts:'right', color:'heat', weight:'secondary', dashed:true, label:'გათბობის უკუკავშირი', bend:130,
+      desc:'ნარჩენი სითბო ინარჩუნებს ავზის სითბოს, რითაც აკომპენსირებს სიცივისგან შენელებულ წყალბადის გამოყოფას.' },
+    { from:'hs', fs:'bottom', to:'ch', ts:'top', color:'heat', weight:'secondary', label:'კაბინის გათბობა', bend:60,
+      desc:'ნარჩენი სითბო ასევე ემსახურება კაბინის უფასო გათბობას.' },
+    { from:'inv', fs:'bottom', to:'cl', ts:'top', color:'power', weight:'secondary', label:'ელექტროენერგია', bend:80,
+      desc:'საბოლოო ელექტრული მიწოდება ობიექტისთვის.' },
+    { from:'fc', fs:'left', to:'wr', ts:'bottom', color:'water', weight:'primary', dashed:true, badge:5, label:'კონდენსატის დაბრუნება — კრავს ციკლს', bend:260, sweep:true,
+      desc:'ეტაპი 5 — საწვავის ელემენტის რეაქციით წარმოქმნილი წყალი კონდენსირდება და მილებით ბრუნდება რეზერვუარში. ნაბიჯი, რომელიც კრავს ციკლს, სადაც სუფთა წყალი ერთადერთი თანაპროდუქტია.' },
+  ];
+
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const svg = document.getElementById('diagram');
+
+  function el_(tag, attrs){
+    const e = document.createElementNS(SVGNS, tag);
+    for(const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  const defs = el_('defs', {});
+  svg.appendChild(defs);
+
+  const colorVars = {
+    solar:'var(--solar)', power:'var(--power)', hydrogen:'var(--hydrogen)',
+    water:'var(--water)', heat:'var(--heat)', ghost:'var(--ghost)'
+  };
+
+  function makeGlow(id, deviation){
+    const f = el_('filter', {id:id, x:'-60%', y:'-60%', width:'220%', height:'220%'});
+    const blur = el_('feGaussianBlur', {stdDeviation:deviation, result:'blur'});
+    const merge = el_('feMerge', {});
+    merge.appendChild(el_('feMergeNode', {in:'blur'}));
+    merge.appendChild(el_('feMergeNode', {in:'SourceGraphic'}));
+    f.appendChild(blur); f.appendChild(merge);
+    defs.appendChild(f);
+  }
+  makeGlow('glow-soft', 2.4);
+  makeGlow('glow-strong', 4.2);
+
+  Object.keys(colorVars).forEach(function(key){
+    const m = el_('marker', {
+      id:'arrow-'+key, viewBox:'0 0 10 10', refX:'8', refY:'5',
+      markerWidth:'7', markerHeight:'7', orient:'auto-start-reverse'
+    });
+    const p = el_('path', {d:'M0,0 L10,5 L0,10 z', fill:colorVars[key]});
+    m.appendChild(p);
+    defs.appendChild(m);
+  });
+
+  const lanes = [
+    {y:112, text:'მზის ენერგია და გარდაქმნა'},
+    {y:410, text:'წყალბადის გამომუშავება → შენახვა'},
+    {y:758, text:'ენერგიის გენერაცია და სითბო'},
+  ];
+  lanes.forEach(function(l){
+    svg.appendChild(el_('line', {x1:20, y1:l.y, x2:1800, y2:l.y, class:'lane-rule'}));
+    const t = el_('text', {x:20, y:l.y-14, class:'lane-label'});
+    t.textContent = l.text;
+    svg.appendChild(t);
+  });
+
+  function bounds(n){
+    if(n.shape==='circle') return {x0:n.cx-n.r, x1:n.cx+n.r, y0:n.cy-n.r, y1:n.cy+n.r};
+    return {x0:n.cx-n.w/2, x1:n.cx+n.w/2, y0:n.cy-n.h/2, y1:n.cy+n.h/2};
+  }
+  function sidePoint(n, side){
+    const b = bounds(n);
+    switch(side){
+      case 'left': return {x:b.x0, y:n.cy, dx:-1, dy:0};
+      case 'right': return {x:b.x1, y:n.cy, dx:1, dy:0};
+      case 'top': return {x:n.cx, y:b.y0, dx:0, dy:-1};
+      case 'bottom': return {x:n.cx, y:b.y1, dx:0, dy:1};
+    }
+  }
+
+  function pathFor(edge){
+    const a = nodes[edge.from], b = nodes[edge.to];
+    const p1 = sidePoint(a, edge.fs);
+    const p2 = sidePoint(b, edge.ts);
+    const bend = edge.bend || 90;
+    let c1, c2;
+    if(edge.sweep){
+      c1 = {x:p1.x + p1.dx*bend, y:p1.y + Math.max(bend*0.9, 120)};
+      c2 = {x:p2.x + p2.dx*bend, y:p2.y + Math.max(bend*0.9, 120)};
+    } else {
+      c1 = {x:p1.x + p1.dx*bend, y:p1.y + p1.dy*bend};
+      c2 = {x:p2.x + p2.dx*bend, y:p2.y + p2.dy*bend};
+    }
+    return {
+      d:'M '+p1.x+' '+p1.y+' C '+c1.x+' '+c1.y+', '+c2.x+' '+c2.y+', '+p2.x+' '+p2.y,
+      mid: edge.sweep
+        ? {x:(p1.x+p2.x)/2, y:Math.max(p1.y,p2.y) + Math.max(bend*0.55, 80)}
+        : {x:(p1.x+p2.x)/2*0.5 + (c1.x+c2.x)/2*0.5, y:(c1.y+c2.y)/2}
+    };
+  }
+
+  const edgeLayer = el_('g', {id:'edges'});
+  svg.appendChild(edgeLayer);
+
+  edges.forEach(function(edge, i){
+    const g = el_('g', {class:'edge-group', 'data-i':i});
+    const geo = pathFor(edge);
+    const isPrimary = edge.weight === 'primary';
+
+    const hit = el_('path', {d:geo.d, class:'edge-hit'});
+    const line = el_('path', {
+      d:geo.d,
+      class:'edge-line ' + (isPrimary?'primary':'secondary') + (edge.dashed?' dashed':' solidflow') + (edge.sweep?' slow':(isPrimary?' fast':'')),
+      stroke: colorVars[edge.color],
+      'marker-end':'url(#arrow-'+edge.color+')',
+      style:'filter:url(#glow-soft)'
+    });
+
+    g.appendChild(line);
+    g.appendChild(hit);
+
+    if(edge.label){
+      const lbl = el_('text', {x:geo.mid.x, y:geo.mid.y-6, class:'edge-label'});
+      lbl.textContent = edge.label;
+      g.appendChild(lbl);
+    }
+    if(edge.badge){
+      const bc = el_('circle', {cx:geo.mid.x, cy:geo.mid.y-24, r:11, fill:'var(--void)', stroke:colorVars[edge.color], 'stroke-width':1.6});
+      const bt = el_('text', {x:geo.mid.x, y:geo.mid.y-24, class:'badge', fill:colorVars[edge.color], 'text-anchor':'middle', 'dominant-baseline':'middle'});
+      bt.textContent = edge.badge;
+      g.appendChild(bc); g.appendChild(bt);
+    }
+
+    g.dataset.title = (edge.badge? 'ეტაპი '+edge.badge+' — ' : '') + nodes[edge.from].label + ' → ' + nodes[edge.to].label;
+    g.dataset.tag = 'ნაკადი';
+    g.dataset.desc = edge.desc || '';
+    attachHover(g);
+    edgeLayer.appendChild(g);
+  });
+
+  const nodeLayer = el_('g', {id:'nodes'});
+  svg.appendChild(nodeLayer);
+
+  Object.keys(nodes).forEach(function(id){
+    const n = nodes[id];
+    const color = colorVars[n.color];
+    const g = el_('g', {class:'node-group ' + n.tier, 'data-id':id});
+
+    if(n.shape==='circle'){
+      for(let a=0; a<8; a++){
+        const ang = a * Math.PI/4;
+        const r1 = n.r+6, r2 = n.r+16;
+        g.appendChild(el_('line', {
+          x1:n.cx+Math.cos(ang)*r1, y1:n.cy+Math.sin(ang)*r1,
+          x2:n.cx+Math.cos(ang)*r2, y2:n.cy+Math.sin(ang)*r2,
+          class:'start-ray'
+        }));
+      }
+      g.appendChild(el_('circle', {cx:n.cx, cy:n.cy, r:n.r, class:'start-core', style:'filter:url(#glow-strong)'}));
+      const lbl = el_('text', {x:n.cx, y:n.cy+2, class:'start-label'});
+      lbl.textContent = n.label;
+      g.appendChild(lbl);
+      const tag = el_('text', {x:n.cx, y:n.cy-n.r-22, class:'node-tag'});
+      tag.setAttribute('fill', color);
+      tag.textContent = 'დაწყება';
+      g.appendChild(tag);
+    } else {
+      const b = bounds(n);
+      const rect = el_('rect', {
+        x:b.x0, y:b.y0, width:n.w, height:n.h, rx:14,
+        class:'node-shape', stroke:color
+      });
+      if(n.tier==='primary') rect.setAttribute('style','filter:url(#glow-strong)');
+      else if(n.tier==='end') rect.setAttribute('style','filter:url(#glow-soft)');
+      g.appendChild(rect);
+
+      const tag = el_('text', {x:n.cx, y:b.y0+18, class:'node-tag'});
+      tag.setAttribute('fill', n.tier==='ghost' ? 'var(--faint)' : color);
+      tag.textContent = n.tag;
+      g.appendChild(tag);
+
+      const lbl = el_('text', {x:n.cx, y:n.cy+8, class:'node-label'});
+      lbl.textContent = n.label;
+      g.appendChild(lbl);
+
+      if(n.tier==='end'){
+        const et = el_('text', {x:n.cx, y:b.y1-10, class:'node-tag'});
+        et.setAttribute('fill', color);
+        et.textContent = 'დასასრული';
+        g.appendChild(et);
+      }
+
+      if(n.badge){
+        const bx = b.x0+2, by = b.y0+2;
+        g.appendChild(el_('circle', {cx:bx, cy:by, r:13, class:'badge-circle', stroke:color}));
+        const bt = el_('text', {x:bx, y:by+1, class:'badge', fill:color, 'text-anchor':'middle', 'dominant-baseline':'middle'});
+        bt.textContent = n.badge;
+        g.appendChild(bt);
+      }
+    }
+
+    g.dataset.title = n.title;
+    g.dataset.tag = n.tag;
+    g.dataset.desc = n.desc;
+    attachHover(g);
+    nodeLayer.appendChild(g);
+  });
+
+  const tooltip = document.getElementById('tooltip');
+  let pinned = null;
+
+  function showTip(g, evt){
+    const color = colorVarFor(g);
+    tooltip.innerHTML =
+      '<span class="tt-tag" style="color:'+color+'">'+g.dataset.tag+'</span>'+
+      '<span class="tt-title">'+g.dataset.title+'</span>'+
+      g.dataset.desc;
+    tooltip.classList.add('show');
+    positionTip(evt);
+  }
+  function colorVarFor(g){
+    const idAttr = g.getAttribute('data-id');
+    if(idAttr && nodes[idAttr]) return colorVars[nodes[idAttr].color];
+    const i = g.getAttribute('data-i');
+    if(i !== null) return colorVars[edges[i].color];
+    return 'var(--mist)';
+  }
+  function positionTip(evt){
+    const pad = 16;
+    let x = evt.clientX + pad;
+    let y = evt.clientY + pad;
+    const tw = 300, th = 140;
+    if(x + tw > window.innerWidth) x = evt.clientX - tw - pad;
+    if(y + th > window.innerHeight) y = evt.clientY - th - pad;
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+  }
+  function hideTip(){
+    if(pinned) return;
+    tooltip.classList.remove('show');
+  }
+
+  function attachHover(g){
+    g.addEventListener('mouseenter', function(e){ if(!pinned) showTip(g, e); });
+    g.addEventListener('mousemove', function(e){ if(!pinned) positionTip(e); });
+    g.addEventListener('mouseleave', hideTip);
+    g.addEventListener('click', function(e){
+      e.stopPropagation();
+      if(pinned === g){
+        pinned.classList.remove('pinned');
+        pinned = null;
+        hideTip();
+      } else {
+        if(pinned) pinned.classList.remove('pinned');
+        pinned = g;
+        g.classList.add('pinned');
+        showTip(g, e);
+      }
+    });
+  }
+  document.addEventListener('click', function(){
+    if(pinned){ pinned.classList.remove('pinned'); pinned = null; }
+    tooltip.classList.remove('show');
+  });
+
+})();
+</script>
+</body>
+</html>
