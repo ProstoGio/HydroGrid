@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>HydroGrid — Full System Schematic</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root {
+    --navy: #0B1F33;
+    --panel: #10304B;
+    --panel-line: #1C4363;
+    --teal: #35D6A9;
+    --blue: #4C9CE8;
+    --amber: #E8B04B;
+    --cyan: #5BC9E8;
+    --cream: #F2EFE6;
+    --muted: #7E93A8;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; background: var(--navy); color: var(--cream);
+    font-family: 'Iowan Old Style', 'Georgia', serif;
+  }
+  .wrap { max-width: 1520px; margin: 0 auto; padding: 48px 24px 90px; }
+  .eyebrow {
+    font-family: 'SF Mono', 'Consolas', monospace; font-size: 12px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--teal); margin-bottom: 12px;
+  }
+  h1 { font-size: clamp(30px, 5vw, 46px); margin: 0 0 10px; line-height: 1.1; }
+  .subtitle { color: var(--muted); font-size: 16px; max-width: 780px; line-height: 1.55; }
+  .diagram-card {
+    background: var(--panel); border: 1px solid var(--panel-line); border-radius: 14px;
+    padding: 20px; margin-top: 36px; overflow-x: auto;
+  }
+  svg { display: block; min-width: 1200px; }
+  .zone-label { fill: var(--muted); font-family: 'SF Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .box-title { fill: var(--cream); font-family: 'Georgia', serif; font-size: 14px; font-weight: bold; }
+  .box-sub { fill: var(--muted); font-family: 'SF Mono', monospace; font-size: 10.5px; }
+  .zone-bg { fill: #ffffff; opacity: 0.02; }
+  .legend { display: flex; flex-wrap: wrap; gap: 18px 30px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--panel-line); font-size: 13px; color: var(--muted); }
+  .legend-item { display: flex; align-items: center; gap: 8px; }
+  .legend-swatch { width: 22px; height: 3px; border-radius: 2px; }
+  footer { margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--panel-line); color: var(--muted); font-size: 13px; line-height: 1.6; }
+  footer a { color: var(--teal); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">HydroGrid · Full System Schematic</div>
+  <h1>Every component, wired together</h1>
+  <p class="subtitle">
+    Beyond the four headline stages (solar, electrolyzer, tank, fuel cell), a real build
+    needs power conditioning, water purification, gas drying, thermal management, and a
+    safety layer. This is the complete picture — scroll horizontally on smaller screens.
+  </p>
+
+  <div class="diagram-card">
+    <svg viewBox="0 0 1440 820" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrE" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1L8 5L1 9" fill="none" stroke="var(--blue)" stroke-width="1.6"/></marker>
+        <marker id="arrH" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1L8 5L1 9" fill="none" stroke="var(--teal)" stroke-width="1.6"/></marker>
+        <marker id="arrW" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1L8 5L1 9" fill="none" stroke="var(--cyan)" stroke-width="1.6"/></marker>
+        <marker id="arrHeat" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1L8 5L1 9" fill="none" stroke="var(--amber)" stroke-width="1.6"/></marker>
+      </defs>
+
+      <rect class="zone-bg" x="30" y="60" width="330" height="560" rx="12"/>
+      <rect class="zone-bg" x="390" y="60" width="330" height="560" rx="12"/>
+      <rect class="zone-bg" x="750" y="60" width="270" height="560" rx="12"/>
+      <rect class="zone-bg" x="1050" y="60" width="360" height="560" rx="12"/>
+      <rect class="zone-bg" x="30" y="650" width="710" height="140" rx="12"/>
+      <rect class="zone-bg" x="750" y="650" width="660" height="140" rx="12"/>
+
+      <text class="zone-label" x="50" y="45">Solar &amp; power conditioning</text>
+      <text class="zone-label" x="410" y="45">Hydrogen production</text>
+      <text class="zone-label" x="770" y="45">Storage</text>
+      <text class="zone-label" x="1070" y="45">Power generation &amp; heat</text>
+      <text class="zone-label" x="50" y="642">Cabin loads</text>
+      <text class="zone-label" x="770" y="642">Control &amp; safety layer</text>
+
+      <text class="box-sub" x="195" y="78" text-anchor="middle">sunlight</text>
+      <line x1="195" y1="82" x2="195" y2="98" stroke="var(--blue)" stroke-width="2" marker-end="url(#arrE)"/>
+      <rect x="65" y="98" width="260" height="58" rx="8" fill="none" stroke="var(--blue)" stroke-width="1.2"/>
+      <text class="box-title" x="195" y="122" text-anchor="middle">PV array</text>
+      <text class="box-sub" x="195" y="140" text-anchor="middle">altitude-adjusted sizing</text>
+      <line x1="195" y1="156" x2="195" y2="196" stroke="var(--blue)" stroke-width="2" marker-end="url(#arrE)"/>
+      <rect x="65" y="196" width="260" height="58" rx="8" fill="none" stroke="var(--blue)" stroke-width="1.2"/>
+      <text class="box-title" x="195" y="220" text-anchor="middle">Charge controller</text>
+      <text class="box-sub" x="195" y="238" text-anchor="middle">MPPT + voltage regulation</text>
+      <line x1="195" y1="254" x2="195" y2="294" stroke="var(--blue)" stroke-width="2" marker-end="url(#arrE)"/>
+      <rect x="65" y="294" width="260" height="58" rx="8" fill="none" stroke="var(--blue)" stroke-width="1.2"/>
+      <text class="box-title" x="195" y="318" text-anchor="middle">Buffer battery</text>
+      <text class="box-sub" x="195" y="336" text-anchor="middle">seconds-scale smoothing only</text>
+
+      <line x1="325" y1="323" x2="420" y2="323" stroke="var(--blue)" stroke-width="2" marker-end="url(#arrE)"/>
+      <text class="box-sub" x="330" y="313">surplus DC</text>
+
+      <line x1="195" y1="352" x2="195" y2="430" stroke="var(--blue)" stroke-width="2"/>
+      <rect x="65" y="430" width="260" height="58" rx="8" fill="none" stroke="var(--blue)" stroke-width="1.2"/>
+      <text class="box-title" x="195" y="454" text-anchor="middle">Inverter / DC bus</text>
+      <text class="box-sub" x="195" y="472" text-anchor="middle">shared: solar + fuel cell input</text>
+      <line x1="195" y1="488" x2="195" y2="650" stroke="var(--blue)" stroke-width="2" marker-end="url(#arrE)"/>
+
+      <rect x="425" y="98" width="260" height="66" rx="8" fill="none" stroke="var(--cyan)" stroke-width="1.2"/>
+      <text class="box-title" x="555" y="122" text-anchor="middle">Water reservoir</text>
+      <text class="box-sub" x="555" y="140" text-anchor="middle">+ deionizer/purification</text>
+      <text class="box-sub" x="555" y="154" text-anchor="middle">closes the water loop</text>
+      <line x1="555" y1="164" x2="555" y2="204" stroke="var(--cyan)" stroke-width="2" marker-end="url(#arrW)"/>
+
+      <rect x="425" y="204" width="260" height="66" rx="8" fill="none" stroke="var(--teal)" stroke-width="1.2"/>
+      <text class="box-title" x="555" y="228" text-anchor="middle">Electrolyzer (PEM)</text>
+      <text class="box-sub" x="555" y="246" text-anchor="middle">splits water using surplus</text>
+      <text class="box-sub" x="555" y="260" text-anchor="middle">sized by peak surplus power (kW)</text>
+
+      <line x1="480" y1="270" x2="480" y2="310" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#arrH)"/>
+      <rect x="425" y="310" width="110" height="52" rx="8" fill="none" stroke="var(--muted)" stroke-width="1.2"/>
+      <text class="box-title" x="480" y="332" text-anchor="middle" style="font-size:13px">O2 vent</text>
+      <text class="box-sub" x="480" y="350" text-anchor="middle">safely vented</text>
+
+      <line x1="620" y1="270" x2="620" y2="310" stroke="var(--teal)" stroke-width="2" marker-end="url(#arrH)"/>
+      <rect x="555" y="310" width="130" height="52" rx="8" fill="none" stroke="var(--teal)" stroke-width="1.2"/>
+      <text class="box-title" x="620" y="332" text-anchor="middle" style="font-size:13px">H2 dryer</text>
+      <text class="box-sub" x="620" y="350" text-anchor="middle">removes moisture</text>
+      <line x1="685" y1="336" x2="770" y2="336" stroke="var(--teal)" stroke-width="2" marker-end="url(#arrH)"/>
+
+      <path d="M 400 270 L 400 400 L 425 400" fill="none" stroke="var(--cyan)" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#arrW)"/>
+      <text class="box-sub" x="405" y="393">condensate return</text>
+
+      <rect x="775" y="230" width="220" height="90" rx="8" fill="none" stroke="var(--teal)" stroke-width="1.4"/>
+      <text class="box-title" x="885" y="256" text-anchor="middle">Metal-hydride tank</text>
+      <text class="box-sub" x="885" y="274" text-anchor="middle">&lt;30 bar, no cold-capacity loss</text>
+      <text class="box-sub" x="885" y="288" text-anchor="middle">desorption rate is cold-sensitive</text>
+      <text class="box-sub" x="885" y="302" text-anchor="middle">insulated + heating coil jacket</text>
+
+      <rect x="775" y="345" width="105" height="48" rx="8" fill="none" stroke="var(--muted)" stroke-width="1"/>
+      <text class="box-sub" x="827" y="365" text-anchor="middle">pressure relief</text>
+      <text class="box-sub" x="827" y="379" text-anchor="middle">valve</text>
+      <rect x="890" y="345" width="105" height="48" rx="8" fill="none" stroke="var(--muted)" stroke-width="1"/>
+      <text class="box-sub" x="942" y="365" text-anchor="middle">level + pressure</text>
+      <text class="box-sub" x="942" y="379" text-anchor="middle">sensors</text>
+
+      <line x1="940" y1="290" x2="1070" y2="290" stroke="var(--teal)" stroke-width="2" marker-end="url(#arrH)"/>
+      <path d="M 1070 350 L 1000 350 L 1000 305 L 985 305" fill="none" stroke="var(--amber)" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#arrHeat)"/>
+      <text class="box-sub" x="1000" y="343">heating coil (waste heat)</text>
+
+      <rect x="1085" y="98" width="260" height="52" rx="8" fill="none" stroke="var(--muted)" stroke-width="1.2"/>
+      <text class="box-title" x="1215" y="118" text-anchor="middle" style="font-size:13px">Air blower</text>
+      <text class="box-sub" x="1215" y="136" text-anchor="middle">supplies O2 to fuel cell</text>
+      <line x1="1215" y1="150" x2="1215" y2="190" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#arrH)"/>
+
+      <rect x="1085" y="190" width="260" height="70" rx="8" fill="none" stroke="var(--teal)" stroke-width="1.4"/>
+      <text class="box-title" x="1215" y="214" text-anchor="middle">Fuel cell (PEM)</text>
+      <text class="box-sub" x="1215" y="232" text-anchor="middle">produces power + heat</text>
+      <text class="box-sub" x="1215" y="246" text-anchor="middle">~55% electrical, ~45% heat</text>
+
+      <line x1="1215" y1="260" x2="1215" y2="350" stroke="var(--amber)" stroke-width="2" marker-end="url(#arrHeat)"/>
+      <rect x="1085" y="350" width="260" height="52" rx="8" fill="none" stroke="var(--amber)" stroke-width="1.2"/>
+      <text class="box-title" x="1215" y="370" text-anchor="middle" style="font-size:13px">Heat recovery splitter</text>
+      <text class="box-sub" x="1215" y="388" text-anchor="middle">to tank coil + cabin heating</text>
+
+      <path d="M 1085 376 L 985 376" fill="none" stroke="var(--amber)" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#arrHeat)"/>
+      <path d="M 1130 402 L 1130 700 L 750 700" fill="none" stroke="var(--amber)" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#arrHeat)"/>
+      <text class="box-sub" x="1140" y="600" transform="rotate(90 1140 600)" text-anchor="middle">to cabin space heating</text>
+
+      <path d="M 1085 220 L 1085 75 L 325 75 L 325 225" fill="none" stroke="var(--blue)" stroke-width="1.8" marker-end="url(#arrE)"/>
+      <text class="box-sub" x="700" y="68" text-anchor="middle">fuel cell DC output -&gt; shared inverter/bus</text>
+
+      <g>
+        <rect x="55" y="690" width="120" height="52" rx="8" fill="none" stroke="var(--blue)" stroke-width="1"/>
+        <text class="box-sub" x="115" y="712" text-anchor="middle">Lighting</text>
+        <text class="box-sub" x="115" y="726" text-anchor="middle">~20W, 5h/day</text>
+        <rect x="190" y="690" width="120" height="52" rx="8" fill="none" stroke="var(--blue)" stroke-width="1"/>
+        <text class="box-sub" x="250" y="712" text-anchor="middle">Comms / radio</text>
+        <text class="box-sub" x="250" y="726" text-anchor="middle">~15W, continuous</text>
+        <rect x="325" y="690" width="120" height="52" rx="8" fill="none" stroke="var(--blue)" stroke-width="1"/>
+        <text class="box-sub" x="385" y="712" text-anchor="middle">Data logger</text>
+        <text class="box-sub" x="385" y="726" text-anchor="middle">~45W, 6h/day</text>
+        <rect x="460" y="690" width="120" height="52" rx="8" fill="none" stroke="var(--blue)" stroke-width="1"/>
+        <text class="box-sub" x="520" y="712" text-anchor="middle">Small DC fridge</text>
+        <text class="box-sub" x="520" y="726" text-anchor="middle">~1.2 kWh/day</text>
+        <rect x="595" y="690" width="120" height="52" rx="8" fill="none" stroke="var(--blue)" stroke-width="1"/>
+        <text class="box-sub" x="655" y="712" text-anchor="middle">Network gear</text>
+        <text class="box-sub" x="655" y="726" text-anchor="middle">~10W, continuous</text>
+      </g>
+
+      <rect x="770" y="690" width="620" height="80" rx="8" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="5 3"/>
+      <text class="box-title" x="1080" y="714" text-anchor="middle" style="font-size:13px">State-machine controller</text>
+      <text class="box-sub" x="1080" y="734" text-anchor="middle">monitors: tank pressure/level, stack temps, cabin need vs. solar output</text>
+      <text class="box-sub" x="1080" y="750" text-anchor="middle">safety: pressure relief valves, H2 leak sensor, E-stop relay, over-temp cutoff</text>
+    </svg>
+
+    <div class="legend">
+      <div class="legend-item"><span class="legend-swatch" style="background:var(--blue)"></span> Electrical (DC/AC)</div>
+      <div class="legend-item"><span class="legend-swatch" style="background:var(--teal)"></span> Hydrogen gas</div>
+      <div class="legend-item"><span class="legend-swatch" style="border-top:2px dashed var(--cyan);height:0"></span> Water</div>
+      <div class="legend-item"><span class="legend-swatch" style="border-top:2px dashed var(--amber);height:0"></span> Waste heat</div>
+      <div class="legend-item"><span class="legend-swatch" style="background:var(--muted)"></span> Sensor / control (no direct flow)</div>
+    </div>
+  </div>
+
+  <footer>
+    This expands the four headline stages (solar → electrolyzer → tank → fuel cell) with
+    every supporting component discussed during development: MPPT charge control, water
+    purification, gas drying, pressure relief and safety monitoring, and the waste-heat
+    recovery loop feeding both the tank (sustaining cold-weather desorption) and cabin
+    space heating. Component costs, efficiencies, and sizing methodology are documented in
+    the main <a href="https://github.com/prostogio/HydroGrid" target="_blank">repository README</a>.
+  </footer>
+</div>
+</body>
+</html>
