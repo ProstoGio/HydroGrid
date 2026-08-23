@@ -11,7 +11,9 @@
 
 **A closed-loop hydrogen system that stores summer solar surplus and releases it as winter power — with pure water as the only byproduct.**
 
-[🌐 Molecular Simulation](https://prostogio.github.io/HydroGrid/) · [📊 Interactive Energy Dashboard](https://prostogio.github.io/HydroGrid/presentation/dashboard/) · [English](#-overview) · [ქართული](#-პროექტის-მიმოხილვა)
+[🌐 Molecular Simulation](https://prostogio.github.io/HydroGrid/) · [📊 Interactive Energy Dashboard](https://prostogio.github.io/HydroGrid/presentation/dashboard/) · [🧩 System Schematic](https://prostogio.github.io/HydroGrid/presentation/schematicEN/)
+
+**Read this in:** English · [Русский](./README.ru.md) · [ქართული](./README.ka.md)
 
 </div>
 
@@ -22,11 +24,11 @@
 - [Overview](#-overview)
 - [The Problem](#-the-problem)
 - [The Closed-Loop Architecture](#-the-closed-loop-architecture)
+- [System Schematic](#-system-schematic)
 - [Simulation & Real-Data Validation](#-simulation--real-data-validation)
 - [Why Not Just Batteries?](#-why-not-just-batteries)
 - [System Control & Simulation](#-system-control--simulation)
 - [Repository Structure](#-repository-structure)
-- [ქართული ვერსია](#-პროექტის-მიმოხილვა)
 
 ---
 
@@ -83,6 +85,14 @@ flowchart LR
 | 4️⃣ | **PEM Fuel Cell** | Combines stored H₂ with ambient O₂ in winter, producing electricity and heat |
 | 5️⃣ | **Condensate Return** | Fuel-cell byproduct water is condensed and returned to the reservoir, closing the loop |
 
+## 🧩 System Schematic
+
+Every component beyond the five headline stages — charge controller, water purification, gas drying, pressure relief, sensors, waste-heat routing — laid out as an interactive, hover-to-explore diagram. Available in three languages:
+
+**▶️ [English](https://prostogio.github.io/HydroGrid/presentation/schematicEN/) · [Русский](https://prostogio.github.io/HydroGrid/presentation/schematicRU/) · [ქართული](https://prostogio.github.io/HydroGrid/presentation/schematicGE/)**
+
+Hover or tap any block or connector for details. Bold numbered blocks plus the return arrow are the five-stage core loop; everything else is a supporting subsystem (power conditioning, safety, instrumentation, facility output).
+
 ## 🧪 Simulation & Real-Data Validation
 
 Beyond the visual concept above, HydroGrid includes a full C++ simulation of the actual
@@ -115,14 +125,13 @@ original implementation.)
 **What makes this more than a toy model:**
 
 - The controller was run against **real 5-year hourly solar data (PVGIS-SARAH3)** for an
-  actual high-altitude site in the Georgian Caucasus (2,715 m) — not synthetic weather. The
-  worst real consecutive low-sun stretch found across that 5-year record was 5 days.
-- It was then stress-tested against a scenario deliberately worse than anything in that real
-  record (an extended 8-day storm), to check for margin beyond what history happened to show.
-- An automated sweep searches panel-area × tank-capacity combinations against **both**
-  datasets at once, optimizing for real component costs (~$180/m² panels, ~$1,800/kg
-  effective metal-hydride storage cost — hydride alloy only stores ~1.5% of its own weight
-  in H₂, making tank capacity the far more expensive lever than panel area).
+  actual high-altitude site in the Georgian Caucasus (2,715 m) — not synthetic weather.
+  The worst real consecutive low-sun stretch found in that record was 5 days.
+- It was then stress-tested against a scenario deliberately worse than anything observed
+  historically (an extended 8-day storm), to check for margin beyond just the historical record.
+- An automated sweep tool searches panel-area × tank-capacity combinations against both
+  datasets simultaneously, optimizing for real component costs (~$180/m² panels,
+  ~$1,800/kg effective hydride storage cost) rather than just "does it survive."
 - The sweep also tracks *wasted* surplus energy (H₂ produced but vented because the tank was
   already full), so "cheapest" accounts for more than just pass/fail.
 
@@ -208,86 +217,13 @@ HydroGrid/
 │   └── sweep.cpp                  # Panel/tank cost-optimization search, waste-aware
 ├── presentation/
 │   ├── dashboard/                 # Interactive browser-based energy dashboard (JS)
+│   ├── schematicEN/ · schematicRU/ · schematicGE/  # Interactive component schematic, trilingual
 │   ├── en/ · ka/                  # Slide decks, bilingual
 │   └── HydroGrid_Presentation*.pdf
-└── README.md
+├── README.md                      # This file (English)
+├── README.ru.md                   # Russian
+└── README.ka.md                   # Georgian
 ```
-
----
----
-
-<div align="center">
-
-## 🇬🇪 ქართული ვერსია
-
-</div>
-
-## 📌 პროექტის მიმოხილვა
-
-მაღალმთიან რეგიონებში მდებარე ობიექტები — კვლევითი სადგურები, მეტეოროლოგიური პუნქტები, რეინჯერთა კაბინები — ძირითადად მზის ენერგიაზეა დამოკიდებული. ზამთარში კი ქარბუქებისა და დაბალი ტემპერატურის გამო ისინი ხშირად ელექტროენერგიის გარეშე რჩებიან, რადგან ლითიუმის ბატარეები 0°C-ზე დაბლა კარგავენ ეფექტურობას და ზოგჯერ სრულად გამოდიან მწყობრიდან.
-
-**HydroGrid** ხსნის ამ პრობლემას: ზაფხულში ჭარბი მზის ენერგია გარდაიქმნება წყალბადად, ინახება უსაფრთხოდ ზამთრამდე, შემდეგ კი უკან იქცევა დენად და სითბოდ — მთლიანად დახურულ ციკლში, სადაც ერთადერთი გამონაბოლქვი სუფთა წყალია.
-
-<details>
-<summary><b>💭 რატომ არის ეს მნიშვნელოვანი?</b></summary>
-<br>
-
-დიზელის ტრანსპორტირება მთის მყინვარულ გზებზე ძვირი და სახიფათოა, ხოლო ექსტრემალურ პირობებში ხშირად სრულიად შეუძლებელი. გენერატორები ასევე ხმაურიანია, გამოყოფენ მავნე აირებს და აზიანებენ დაცულ ეკოსისტემებს. HydroGrid გვერდს უვლის ამ ყველაფერს — არც საწვავის მიწოდებაა საჭირო, არც წვის ემისია და არც სეზონური ენერგოდანაკარგი.
-
-</details>
-
-## 🔄 დახურული ციკლის პრინციპი
-
-```mermaid
-flowchart LR
-    subgraph S1["☀️ ზაფხული — ჭარბი მზე"]
-        W[💧 წყლის რეზერვუარი] -->|ჭარბი ენერგია| E[⚡ PEM ელექტროლიზერი]
-        E -->|H₂| ST[🔋 მეტალჰიდრიდული საცავი]
-        E -->|O₂| V((უსაფრთხოდ ნიავდება))
-    end
-
-    subgraph S2["❄️ ზამთარი — ენერგიის დეფიციტი"]
-        ST -->|H₂ გამოთავისუფლება| F[🔥 PEM საწვავის ელემენტი]
-        F -->|+ ჰაერის O₂| OUT[⚡ დენი + სითბო]
-        F -->|კონდენსატი| W
-    end
-
-    S1 -.-> S2
-    S2 -.->|წყალი ბრუნდება| S1
-```
-
-| ეტაპი | კომპონენტი | ფუნქცია |
-|---|---|---|
-| 1️⃣ | **წყლის რეზერვუარი** | სისტემის საწყისი და ბოლო წერტილი |
-| 2️⃣ | **PEM ელექტროლიზერი** | შლის წყალს H₂-ად და O₂-ად ზაფხულის ჭარბი ენერგიით |
-| 3️⃣ | **მეტალჰიდრიდული საცავი** | ინახავს H₂-ს მყარ სტრუქტურაში, დაბალ წნევაზე (<30 bar) |
-| 4️⃣ | **PEM საწვავის ელემენტი** | აერთებს შენახულ H₂-ს ჰაერის O₂-თან, გამოიმუშავებს დენსა და სითბოს |
-| 5️⃣ | **კონდენსაციის წრედი** | რეაქციის შედეგად მიღებული წყალი უბრუნდება რეზერვუარს |
-
-## 🧪 სიმულაცია და რეალურ მონაცემებზე ვალიდაცია
-
-ვიზუალური კონცეფციის გარდა, HydroGrid მოიცავს სრულ C++ სიმულაციას რეალური ენერგეტიკული გამოთვლებით — მზის ენერგია, ელექტროლიზი, შენახვა და დენის გამომუშავება — და ავტომატურ კონტროლერს, რომელიც ყოველდღიურად წყვეტს, სისტემა უნდა იტენებოდეს თუ იხარჯებოდეს.
-
-**▶️ [ინტერაქტიული ენერგეტიკული დაფის გახსნა](https://prostogio.github.io/HydroGrid/presentation/dashboard/)**
-— გადაატანეთ ცოცხები (პანელის ფართობი, ავზის მოცულობა, კაბინის საჭიროება, კომპონენტების ღირებულება) და ნახეთ, როგორ იქცევა სისტემა რეალურ 90-დღიან ზამთარზე დაყრდნობით, პასუხის და ჩავარდნის ჩათვლით.
-
-**რა არის რეალურად ვალიდირებული:**
-
-კონტროლერი გატესტილია საქართველოს კავკასიონის რეალურ, 5-წლიან, საათობრივ მზის მონაცემებზე (PVGIS-SARAH3), 2,715 მეტრ სიმაღლეზე — არა სინთეზურ ამინდზე. რეალურ მონაცემებში ნაპოვნი ყველაზე ცუდი ზედიზედ დაბალმზიანი პერიოდი იყო 5 დღე. შემდეგ სისტემა შემოწმდა კიდევ უფრო რთულ, ხელოვნურად გახანგრძლივებულ 8-დღიან შტორმის სცენარზეც, რეალურ ჩანაწერზე უარესზე. ავტომატურმა ძიების ხელსაწყომ გადაამოწმა პანელის ფართობისა და ავზის მოცულობის კომბინაციები რეალური ღირებულებების მიხედვით (~$180/მ² პანელი, ~$1,800/კგ მეტალჰიდრიდის ეფექტური ღირებულება), ასევე ითვალისწინებს დაკარგულ ჭარბ ენერგიას.
-
-**კვლევის პატიოსანი ფარგლები:** ნაპოვნი პანელისა და ავზის ზომები სწორია ამ კონკრეტული საცდელი წერტილის რეალურ კლიმატურ მონაცემებზე დაყრდნობით — HydroGrid წარმოადგენს ზომების განსაზღვრის **მეთოდოლოგიას**, და არა უნივერსალურ სპეციფიკაციას.
-
-## 🔋 რატომ არა უბრალოდ ბატარეები?
-
-სამართლიანი კითხვაა, და ჯობია ის რეალურად შემოწმდეს, ვიდრე უბრალოდ ვივარაუდოთ პასუხი. ინტერაქტიულ დაფას აქვს **Li-Ion / LiFePO4 / წყალბადის** გადამრთველი, რეალური 2026 წლის ფასებითა და თითოეული ქიმიის ცივ ამინდში რეალური ტევადობის კლებით, იმავე რეალურ ზამთრის მონაცემებზე გატესტილი.
-
-**რეალური შედეგები:** 16 მ² პანელით, წყალბადის 1 კგ ავზი უძლებს სრულ (რეალურ + ხელოვნურად გართულებულ) ზამთარს ~$4,680-ად. იმავე ღირებულების მიდამოში, არც Li-Ion (10 კვტ.სთ) და არც LiFePO4 (10 კვტ.სთ) ვერ უძლებს — მე-8 ან 23-ე დღეს ჩავარდნით, მიუხედავად იმისა, რომ პირველივე დღეს სავსეა. მიზეზი ცივ ამინდში ტევადობის რეალური კლებაა — 10 კვტ.სთ ბატარეა ცივ მთაში ფაქტობრივად 4-6 კვტ.სთ-მდე იკლებს, ზუსტად მაშინ, როცა ყველაზე მეტად სჭირდება. მეტალჰიდრიდის ავზს ეს პრობლემა საერთოდ არ აქვს — 1 კგ რჩება 1 კგ ტემპერატურის მიუხედავად. სცადეთ თავად [ინტერაქტიულ დაფაზე](https://prostogio.github.io/HydroGrid/presentation/dashboard/).
-
-## 💻 პროგრამული მართვა და სიმულაცია
-
-სისტემის მუშაობას მართავს **C++**-ზე დაწერილი კონტროლის ფენა, **state-machine** არქიტექტურით უსაფრთხო გადართვისთვის შენახვასა და გამომუშავებას შორის.
-
-**▶️ [სიმულაციის გაშვება](https://prostogio.github.io/HydroGrid/)**
 
 <div align="center">
 
