@@ -4,14 +4,14 @@
 
 ### Сезонное хранение зелёного водорода для автономных высокогорных объектов
 
-[![Молекулярная симуляция](https://img.shields.io/badge/molecular%20sim-live-brightgreen?style=for-the-badge&logo=githubpages)](https://prostogio.github.io/HydroGrid/)
+[![Молекулярная симуляция](https://img.shields.io/badge/molecular%20sim-live-brightgreen?style=for-the-badge&logo=githubpages)](https://prostogio.github.io/HydroGrid/presentation/simulation)
 [![Интерактивная панель](https://img.shields.io/badge/energy%20dashboard-interactive-35D6A9?style=for-the-badge)](https://prostogio.github.io/HydroGrid/presentation/dashboard/)
 [![Лицензия](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](#)
 [![Сделано на C++](https://img.shields.io/badge/simulation%20core-C%2B%2B-00599C?style=for-the-badge&logo=cplusplus)](#)
 
 **Замкнутая водородная система, которая накапливает летний избыток солнечной энергии и отдаёт его как зимнюю электроэнергию — с чистой водой в качестве единственного побочного продукта.**
 
-[🌐 Молекулярная симуляция](https://prostogio.github.io/HydroGrid/) · [📊 Интерактивная панель](https://prostogio.github.io/HydroGrid/presentation/dashboard/) · [🧩 Схема системы](https://prostogio.github.io/HydroGrid/presentation/schematicRU/)
+[🌐 Молекулярная симуляция](https://prostogio.github.io/HydroGrid/presentation/simulation) · [📊 Интерактивная панель](https://prostogio.github.io/HydroGrid/presentation/dashboard/) · [🧩 Схема системы](https://prostogio.github.io/HydroGrid/presentation/schematics/)
 
 **Читать на:** [English](./README.md) · Русский · [ქართული](./README.ka.md)
 
@@ -89,7 +89,7 @@ flowchart LR
 
 Все компоненты сверх пяти основных этапов — контроллер заряда, очистка воды, осушение газа, предохранительные клапаны, датчики, маршрутизация отработанного тепла — представлены в виде интерактивной схемы с подсказками при наведении. Доступна на трёх языках:
 
-**▶️ [English](https://prostogio.github.io/HydroGrid/presentation/schematicEN/) · [Русский](https://prostogio.github.io/HydroGrid/presentation/schematicRU/) · [ქართული](https://prostogio.github.io/HydroGrid/presentation/schematicGE/)**
+**▶️ [Mutli Language Schematics](https://prostogio.github.io/HydroGrid/presentation/schematics/)**
 
 Наведите курсор или нажмите на любой блок или соединитель, чтобы увидеть подробности. Жирные пронумерованные блоки и стрелка возврата — это основной пятиступенчатый цикл; всё остальное — вспомогательные подсистемы (питание, безопасность, датчики, вывод на объект).
 
@@ -214,7 +214,7 @@ flowchart LR
 
 Интерактивная веб-симуляция визуализирует цикл расщепления/рекомбинации молекул в реальном времени:
 
-**▶️ [Запустить молекулярную симуляцию](https://prostogio.github.io/HydroGrid/)**
+**▶️ [Запустить молекулярную симуляцию](https://prostogio.github.io/HydroGrid/presentation/simulation)**
 
 ## 📂 Структура репозитория
 

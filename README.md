@@ -4,14 +4,14 @@
 
 ### Seasonal Green Hydrogen Energy Storage for Off-Grid Alpine Facilities
 
-[![Molecular Simulation](https://img.shields.io/badge/molecular%20sim-live-brightgreen?style=for-the-badge&logo=githubpages)](https://prostogio.github.io/HydroGrid/)
+[![Molecular Simulation](https://img.shields.io/badge/molecular%20sim-live-brightgreen?style=for-the-badge&logo=githubpages)](https://prostogio.github.io/HydroGrid/presentation/simulation)
 [![Interactive Dashboard](https://img.shields.io/badge/energy%20dashboard-interactive-35D6A9?style=for-the-badge)](https://prostogio.github.io/HydroGrid/presentation/dashboard/)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](#)
 [![Made with C++](https://img.shields.io/badge/simulation%20core-C%2B%2B-00599C?style=for-the-badge&logo=cplusplus)](#)
 
 **A closed-loop hydrogen system that stores summer solar surplus and releases it as winter power — with pure water as the only byproduct.**
 
-[🌐 Molecular Simulation](https://prostogio.github.io/HydroGrid/) · [📊 Interactive Energy Dashboard](https://prostogio.github.io/HydroGrid/presentation/dashboard/) · [🧩 System Schematic](https://prostogio.github.io/HydroGrid/presentation/schematicEN/)
+[🌐 Molecular Simulation](https://prostogio.github.io/HydroGrid/presentation/simulation) · [📊 Interactive Energy Dashboard](https://prostogio.github.io/HydroGrid/presentation/dashboard/) · [🧩 System Schematic](https://prostogio.github.io/HydroGrid/presentation/schematics/)
 
 **Read this in:** English · [Русский](./README.ru.md) · [ქართული](./README.ka.md)
 
@@ -89,7 +89,7 @@ flowchart LR
 
 Every component beyond the five headline stages — charge controller, water purification, gas drying, pressure relief, sensors, waste-heat routing — laid out as an interactive, hover-to-explore diagram. Available in three languages:
 
-**▶️ [English](https://prostogio.github.io/HydroGrid/presentation/schematicEN/) · [Русский](https://prostogio.github.io/HydroGrid/presentation/schematicRU/) · [ქართული](https://prostogio.github.io/HydroGrid/presentation/schematicGE/)**
+**▶️ [Multi Language Schematics](https://prostogio.github.io/HydroGrid/presentation/schematics/)**
 
 Hover or tap any block or connector for details. Bold numbered blocks plus the return arrow are the five-stage core loop; everything else is a supporting subsystem (power conditioning, safety, instrumentation, facility output).
 
@@ -200,7 +200,7 @@ The hybrid power topology is orchestrated by a **C++ control layer**, using a
 
 An interactive web-based simulation visualizes the molecular splitting/recombining cycle in real time:
 
-**▶️ [Launch the molecular loop simulation](https://prostogio.github.io/HydroGrid/)**
+**▶️ [Launch the molecular loop simulation](https://prostogio.github.io/HydroGrid/presentation/simulation)**
 
 ## 📂 Repository Structure
 

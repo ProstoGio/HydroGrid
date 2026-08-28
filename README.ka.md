@@ -4,14 +4,14 @@
 
 ### სეზონური მწვანე წყალბადის ენერგოსისტემა მაღალმთიანი ავტონომიური ობიექტებისთვის
 
-[![მოლეკულური სიმულაცია](https://img.shields.io/badge/molecular%20sim-live-brightgreen?style=for-the-badge&logo=githubpages)](https://prostogio.github.io/HydroGrid/)
+[![მოლეკულური სიმულაცია](https://img.shields.io/badge/molecular%20sim-live-brightgreen?style=for-the-badge&logo=githubpages)](https://prostogio.github.io/HydroGrid/presentation/simulation)
 [![ინტერაქტიული დაფა](https://img.shields.io/badge/energy%20dashboard-interactive-35D6A9?style=for-the-badge)](https://prostogio.github.io/HydroGrid/presentation/dashboard/)
 [![ლიცენზია](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](#)
 [![შექმნილია C++-ზე](https://img.shields.io/badge/simulation%20core-C%2B%2B-00599C?style=for-the-badge&logo=cplusplus)](#)
 
 **დახურული წყალბადის სისტემა, რომელიც ინახავს ზაფხულის ჭარბ მზის ენერგიას და ათავისუფლებს მას ზამთრის დენად — სუფთა წყალი ერთადერთი გვერდითი პროდუქტია.**
 
-[🌐 მოლეკულური სიმულაცია](https://prostogio.github.io/HydroGrid/) · [📊 ინტერაქტიული დაფა](https://prostogio.github.io/HydroGrid/presentation/dashboard/) · [🧩 სისტემის სქემა](https://prostogio.github.io/HydroGrid/presentation/schematicGE/)
+[🌐 მოლეკულური სიმულაცია](https://prostogio.github.io/HydroGrid/presentation/simulation) · [📊 ინტერაქტიული დაფა](https://prostogio.github.io/HydroGrid/presentation/dashboard/) · [🧩 სისტემის სქემა](https://prostogio.github.io/HydroGrid/presentation/schematics/)
 
 **წაიკითხეთ:** [English](./README.md) · [Русский](./README.ru.md) · ქართული
 
@@ -89,7 +89,7 @@ flowchart LR
 
 ყველა კომპონენტი ხუთი ძირითადი ეტაპის მიღმა — დამტენის კონტროლერი, წყლის გაწმენდა, აირის გაშრობა, უსაფრთხოების სარქველები, სენსორები, ნარჩენი სითბოს მარშრუტიზაცია — წარმოდგენილია ინტერაქტიულ სქემაზე, სადაც კურსორის დაჭერით ვრცელი აღწერა გამოჩნდება. ხელმისაწვდომია სამ ენაზე:
 
-**▶️ [English](https://prostogio.github.io/HydroGrid/presentation/schematicEN/) · [Русский](https://prostogio.github.io/HydroGrid/presentation/schematicRU/) · [ქართული](https://prostogio.github.io/HydroGrid/presentation/schematicGE/)**
+**▶️ [Multi Language Schematics](https://prostogio.github.io/HydroGrid/presentation/schematics/)**
 
 დააჭირეთ ან გადაატარეთ კურსორი ნებისმიერ ბლოკს ან შემაერთებელს დეტალებისთვის. მუქი, დანომრილი ბლოკები და დაბრუნების ისარი წარმოადგენს ხუთსაფეხურიან ძირითად ციკლს; დანარჩენი ყველაფერი დამხმარე ქვესისტემაა (კვება, უსაფრთხოება, სენსორები, ობიექტის გამომავალი).
 
@@ -212,7 +212,7 @@ flowchart LR
 
 ინტერაქტიული ვებ-სიმულაცია ვიზუალურად წარმოადგენს მოლეკულების დაშლა-შეერთების ციკლს რეალურ დროში:
 
-**▶️ [მოლეკულური სიმულაციის გაშვება](https://prostogio.github.io/HydroGrid/)**
+**▶️ [მოლეკულური სიმულაციის გაშვება](https://prostogio.github.io/HydroGrid/presentation/simulation)**
 
 ## 📂 რეპოზიტორიის სტრუქტურა
 
